@@ -1,69 +1,90 @@
 # Djoudini's Bar Calculator 🍸
 
-**Der ultimative Barrechner - Nie wieder abgezogen werden!**
+**Der ultimative Begleiter für deine Barbesuche – Behalte den Überblick und werde nie wieder abgezogen!**
 
-Eine Android-App, die dir hilft, in Cocktailbars den Überblick zu behalten.
+Eine moderne Android-App, entwickelt mit Kotlin und Jetpack Compose, die dir hilft, deine Ausgaben zu verfolgen, den Überblick über deinen Promillewert zu behalten und die besten Angebote zu finden.
 
-## Features
+## ✨ Funktionen
 
-### Rechnungsrechner
-- Getränke zur Rechnung hinzufügen (100 Cocktails + 50 Biere)
-- Eigene Getränke mit Preis eingeben
-- Gesamtübersicht in Echtzeit
+*   **Intelligente Rechnungsverwaltung:**
+    *   **Standortbasierte Gruppierung:** Rechnungen werden automatisch nach den von dir besuchten Bars gruppiert, sodass du den Überblick über deine Ausgaben an jedem Ort behältst.
+    *   **Getränke hinzufügen:** Füge einfach Getränke aus einer umfangreichen Datenbank hinzu oder erfasse individuelle Preise.
+    *   **Persistente Daten:** Deine gesamten Rechnungsdaten und Einstellungen werden automatisch gespeichert und bei jedem Neustart der App geladen, damit du nichts verlierst.
 
-### Preischeck
-- Vergleiche den Preis deines Drinks mit dem Durchschnitt
-- Ampelsystem: Fair / Teuer / Abzocke
-- Datenbank mit 100 Top-Cocktails und 50 deutschen Bieren
+*   **Erweiterter Preischeck:**
+    *   Vergleiche den Preis deines Drinks mit dem durchschnittlichen Preis der App-Datenbank.
+    *   Intuitive Statusanzeige: "✅ Top Preis!", "⚠️ Normaler Preis.", "🚨 ABZOCKE!"
 
-### Promillerechner
-- Berechne deinen geschätzten Promillewert
-- Widmark-Formel mit Geschlecht und Gewicht
-- Zeit-bis-nüchtern Anzeige
+*   **Präziser Promillerechner:**
+    *   Berechne deinen geschätzten Blutalkoholgehalt basierend auf Geschlecht, Gewicht und konsumierten Getränken (Widmark-Formel).
+    *   Visualisierung deines Pegels mit dynamischen Farben.
 
-### Trinkgeldrechner
-- Prozentual oder aufgerundet
-- Vorschläge zum Aufrunden
+*   **Interaktive Bar-Erkundung:**
+    *   **Bars in der Nähe finden:** Nutze die OpenStreetMap (Overpass API), um automatisch Bars in deiner Umgebung zu entdecken und auszuwählen.
+    *   **Standortberechtigungen:** Die App fragt nach deiner Zustimmung, um deinen Standort für die Barsuche zu verwenden.
 
-### Rechnung teilen
-- Teile die Rechnung auf mehrere Personen
-- Optional mit Trinkgeld
+*   **Umfangreiche Getränke-Datenbank:**
+    *   Eine riesige Auswahl von **über 250 Getränken** (Cocktails, Biere, Shots, alkoholfreie Getränke), um jeden Geschmack zu treffen.
+    *   Jeder Drink mit Details wie Kategorie, durchschnittlichem Preis, Alkoholgehalt und einer Beschreibung.
 
-### Getränk-Erkennung
-- Foto-basierte Farberkennung
-- Manuelle Identifikation über Farbe & Glastyp
-- Vorschläge mit Trefferwahrscheinlichkeit
+*   **Weitere Features (To-Do):**
+    *   Trinkgeldrechner
+    *   Rechnung teilen
+    *   Getränk-Erkennung per Foto
+    *   Betrunken-Modus
+    *   Wasser-Logging
 
-### Betrunken-Modus
-- Extra große Buttons für unsichere Finger
+## 🚀 Erste Schritte
 
-## Getränke-Datenbank
+### Installation
 
-### Top 100 Cocktails
-Klassiker, Tiki, Longdrinks, Sours, Shots, Champagner-Cocktails und mehr.
+1.  **APK herunterladen:**
+    Die neueste APK-Datei wird automatisch über GitHub Actions erstellt. Gehe zu **Actions** > **Build Android APK** > wähle den neuesten erfolgreichen Build > scrolle nach unten zu "Artifacts" und lade die `app-debug.apk` herunter.
 
-### Top 50 Deutsche Biere
-Pilsener, Weizen, Helles, Kölsch, Altbier, Schwarzbier, Craft Beer und mehr.
+2.  **App installieren:**
+    Übertrage die APK auf dein Android-Gerät und installiere sie. Gegebenenfalls musst du die Installation aus "unbekannten Quellen" in deinen Geräteeinstellungen zulassen.
 
-## APK Download
+### Verwendung
 
-Die APK wird automatisch über GitHub Actions gebaut. Gehe zu **Actions** > **Build Android APK** > wähle den neuesten Build > lade das Artifact herunter.
+1.  **Standortberechtigung erteilen:** Beim ersten Start fragt die App nach der Standortberechtigung. Diese ist notwendig, um Bars in deiner Nähe finden zu können.
+2.  **Bar auswählen:** Auf dem Home-Screen kannst du auf den "Bar wechseln"-Button klicken, um eine Liste von Bars in deiner Umgebung anzuzeigen. Wähle eine Bar aus oder gib einen Namen manuell ein.
+3.  **Getränke zur Rechnung hinzufügen:** Gehe zum "Menü"-Tab, wähle ein Getränk und gib den tatsächlichen Preis ein, um es deiner Rechnung hinzuzufügen.
+4.  **Rechnungen einsehen:** Im "Rechnung"-Tab siehst du alle deine Barbesuche gruppiert mit den jeweiligen Getränken und der Gesamtsumme.
+5.  **Promillewert prüfen:** Der "Pegel"-Tab zeigt dir deinen geschätzten Promillewert und die Hangover-Gefahr an.
 
-## Technologie
+## 🛠️ Entwicklung
 
-- **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
-- **Android:** WebView-Wrapper mit nativer Kamera-Integration
-- **Build:** Gradle + GitHub Actions
-- **Design:** Dark Theme mit Gold-Akzenten
+### Technologie-Stack
 
-## Build
+*   **Programmiersprache:** Kotlin
+*   **UI-Framework:** Jetpack Compose (Modern Android UI)
+*   **Datenpersistenz:** AndroidX DataStore Preferences (für Einstellungen und serialisierte Rechnungsdaten)
+*   **Standortdienste:** Google Location Services (für GPS-Koordinaten)
+*   **OpenStreetMap API:** Overpass API (für die Suche nach Bars in der Nähe)
+*   **HTTP-Client:** OkHttp
+*   **JSON-Serialisierung:** Gson
+*   **Build-System:** Gradle
+*   **CI/CD:** GitHub Actions (für automatische APK-Builds)
+*   **Unit Testing:** JUnit (für die Überprüfung der Kernlogik)
+
+### Lokaler Build
+
+Um die App lokal zu kompilieren und eine Debug-APK zu erstellen:
 
 ```bash
 ./gradlew assembleDebug
 ```
 
-Die APK findest du dann unter `app/build/outputs/apk/debug/`.
+Die erstellte APK findest du dann unter `app/build/outputs/apk/debug/`.
 
-## Lizenz
+### Tests ausführen
 
-MIT License
+Um die Unit-Tests der App auszuführen:
+
+```bash
+./gradlew testDebugUnitTest
+```
+
+## 📄 Lizenz
+
+Dieses Projekt ist unter der MIT-Lizenz lizenziert – siehe die [LICENSE](LICENSE)-Datei für Details.
