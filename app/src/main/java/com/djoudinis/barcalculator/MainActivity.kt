@@ -119,9 +119,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PriceEntryDialog(drink: Drink, viewModel: MainViewModel, onConfirm: (Double) -> Unit) {
-    var priceInput by remember { mutableStateOf(
+    var priceInput by remember(drink) { mutableStateOf(
         when(drink.type) {
             com.djoudinis.barcalculator.data.DrinkType.COCKTAIL -> viewModel.standardCocktailPrice
             com.djoudinis.barcalculator.data.DrinkType.BEER -> viewModel.standardBeerPrice
@@ -167,7 +168,7 @@ fun BarCalculatorApp(viewModel: MainViewModel, accentColor: Color) {
                 title = { 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("DJOUDINI'S BAR CALC", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, letterSpacing = 2.sp)
-                        Text("PRO EDITION", fontSize = 10.sp, color = accentColor, fontWeight = FontWeight.Bold)
+                        Text("THE NIGHT IN NUMBERS", fontSize = 10.sp, color = accentColor, fontWeight = FontWeight.Bold)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFF0A0A0F))
@@ -175,18 +176,41 @@ fun BarCalculatorApp(viewModel: MainViewModel, accentColor: Color) {
         },
         bottomBar = {
             NavigationBar(containerColor = Color(0xFF0A0A0F).copy(alpha = 0.95f)) {
-                val tabs = listOf("Home", "Rechnung", "Menü", "Pegel", "Set")
-                val icons = listOf(Icons.Default.Home, Icons.Default.Receipt, Icons.Default.LocalDrink, Icons.Default.WineBar, Icons.Default.Settings)
-                
-                tabs.forEachIndexed { index, title ->
-                    NavigationBarItem(
-                        selected = currentTab == index,
-                        onClick = { currentTab = index },
-                        icon = { Icon(icons[index], title) },
-                        label = { Text(title) },
-                        colors = NavigationBarItemDefaults.colors(selectedIconColor = accentColor, selectedTextColor = accentColor)
-                    )
-                }
+                NavigationBarItem(
+                    selected = currentTab == 0,
+                    onClick = { currentTab = 0 },
+                    icon = { Icon(Icons.Filled.Home, "Home") },
+                    label = { Text("Home") },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = accentColor, selectedTextColor = accentColor)
+                )
+                NavigationBarItem(
+                    selected = currentTab == 1,
+                    onClick = { currentTab = 1 },
+                    icon = { Icon(Icons.Filled.Receipt, "Bill") },
+                    label = { Text("Rechnung") },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = accentColor, selectedTextColor = accentColor)
+                )
+                NavigationBarItem(
+                    selected = currentTab == 2,
+                    onClick = { currentTab = 2 },
+                    icon = { Icon(Icons.Filled.LocalDrink, "Menu") },
+                    label = { Text("Menü") },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = accentColor, selectedTextColor = accentColor)
+                )
+                NavigationBarItem(
+                    selected = currentTab == 3,
+                    onClick = { currentTab = 3 },
+                    icon = { Icon(Icons.Filled.WineBar, "Pegel") },
+                    label = { Text("Pegel") },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = accentColor, selectedTextColor = accentColor)
+                )
+                NavigationBarItem(
+                    selected = currentTab == 4,
+                    onClick = { currentTab = 4 },
+                    icon = { Icon(Icons.Filled.Settings, "Set") },
+                    label = { Text("Set") },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = accentColor, selectedTextColor = accentColor)
+                )
             }
         }
     ) { padding ->
@@ -207,7 +231,6 @@ fun BarCalculatorApp(viewModel: MainViewModel, accentColor: Color) {
 @Composable
 fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
     LazyColumn(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Location Management
         item {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(20.dp)) {
@@ -217,12 +240,11 @@ fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
                         value = viewModel.currentBarName,
                         onValueChange = { viewModel.currentBarName = it },
                         modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = { Icon(Icons.Default.Place, "Location", tint = accentColor) },
-                        trailingIcon = { if(viewModel.currentBarName.isNotEmpty()) IconButton(onClick = { viewModel.currentBarName = "" }) { Icon(Icons.Default.Clear, "Clear") } },
+                        leadingIcon = { Icon(Icons.Filled.Place, "Location", tint = accentColor) },
+                        trailingIcon = { if(viewModel.currentBarName.isNotEmpty()) IconButton(onClick = { viewModel.currentBarName = "" }) { Icon(Icons.Filled.Clear, "Clear") } },
                         singleLine = true,
                         placeholder = { Text("Bar Name eingeben...") }
                     )
-                    Text("Drinks werden automatisch dieser Bar zugeordnet.", fontSize = 10.sp, color = Color.Gray, modifier = Modifier.padding(top = 4.dp))
                 }
             }
         }
@@ -236,7 +258,6 @@ fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
             }
         }
 
-        // Night in Numbers Card
         item {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(20.dp)) {
@@ -254,6 +275,7 @@ fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
                         }
                     }
                     
+                    @Suppress("DEPRECATION")
                     Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color.DarkGray)
                     
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
@@ -285,7 +307,7 @@ fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0288D1))
             ) {
-                Icon(Icons.Default.WaterDrop, "Water")
+                Icon(Icons.Filled.WaterDrop, "Water")
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("WASSER LOGGEN", fontWeight = FontWeight.Bold)
             }
@@ -316,7 +338,7 @@ fun MenuScreen(viewModel: MainViewModel, accentColor: Color) {
             value = viewModel.searchQuery,
             onValueChange = { viewModel.searchQuery = it },
             placeholder = { Text("Getränk suchen...") },
-            leadingIcon = { Icon(Icons.Default.Search, "Search") },
+            leadingIcon = { Icon(Icons.Filled.Search, "Search") },
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             shape = RoundedCornerShape(12.dp)
         )
@@ -361,9 +383,10 @@ fun BillScreen(viewModel: MainViewModel, accentColor: Color) {
                     }
                     Text("%.2f€".format(item.price), fontWeight = FontWeight.Bold)
                     IconButton(onClick = { viewModel.removeBillItem(item) }) {
-                        Icon(Icons.Default.Delete, "Remove", tint = Color.Red.copy(alpha = 0.4f))
+                        Icon(Icons.Filled.Delete, "Remove", tint = Color.Red.copy(alpha = 0.4f))
                     }
                 }
+                @Suppress("DEPRECATION")
                 Divider(color = Color.DarkGray.copy(alpha = 0.2f))
             }
         }
@@ -393,13 +416,12 @@ fun BacScreen(viewModel: MainViewModel, accentColor: Color) {
                     modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
                     color = if (viewModel.hangoverForecast > 60) Color.Red else Color.Yellow
                 )
-                Text("${viewModel.hangoverForecast}%", fontWeight = FontWeight.Black)
             }
         }
         Text("Körpergewicht: ${viewModel.weight.toInt()}kg")
-        Slider(value = viewModel.weight, onValueChange = { viewModel.weight = it }, valueRange = 40f..150f)
+        Slider(value = viewModel.weight, onValueChange = { viewModel.weight = it }, valueRange = 40f..150f, colors = SliderDefaults.colors(thumbColor = accentColor, activeTrackColor = accentColor))
         Text("Zeit seit Start: ${viewModel.hoursSinceFirstDrink.toInt()}h")
-        Slider(value = viewModel.hoursSinceFirstDrink, onValueChange = { viewModel.hoursSinceFirstDrink = it }, valueRange = 0f..12f)
+        Slider(value = viewModel.hoursSinceFirstDrink, onValueChange = { viewModel.hoursSinceFirstDrink = it }, valueRange = 0f..12f, colors = SliderDefaults.colors(thumbColor = accentColor, activeTrackColor = accentColor))
     }
 }
 
@@ -412,13 +434,13 @@ fun SettingsScreen(viewModel: MainViewModel, accentColor: Color) {
         Spacer(modifier = Modifier.height(12.dp))
         
         NightStatLabel("Cocktails", "%.2f €".format(viewModel.standardCocktailPrice))
-        Slider(value = viewModel.standardCocktailPrice.toFloat(), onValueChange = { viewModel.standardCocktailPrice = it.toDouble() }, valueRange = 3f..15f)
+        Slider(value = viewModel.standardCocktailPrice.toFloat(), onValueChange = { viewModel.standardCocktailPrice = it.toDouble() }, valueRange = 3f..15f, colors = SliderDefaults.colors(thumbColor = accentColor, activeTrackColor = accentColor))
         
         NightStatLabel("Bier", "%.2f €".format(viewModel.standardBeerPrice))
-        Slider(value = viewModel.standardBeerPrice.toFloat(), onValueChange = { viewModel.standardBeerPrice = it.toDouble() }, valueRange = 1f..8f)
+        Slider(value = viewModel.standardBeerPrice.toFloat(), onValueChange = { viewModel.standardBeerPrice = it.toDouble() }, valueRange = 1f..8f, colors = SliderDefaults.colors(thumbColor = accentColor, activeTrackColor = accentColor))
 
         NightStatLabel("Shots", "%.2f €".format(viewModel.standardShotPrice))
-        Slider(value = viewModel.standardShotPrice.toFloat(), onValueChange = { viewModel.standardShotPrice = it.toDouble() }, valueRange = 1f..5f)
+        Slider(value = viewModel.standardShotPrice.toFloat(), onValueChange = { viewModel.standardShotPrice = it.toDouble() }, valueRange = 1f..5f, colors = SliderDefaults.colors(thumbColor = accentColor, activeTrackColor = accentColor))
         
         Spacer(modifier = Modifier.height(24.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {

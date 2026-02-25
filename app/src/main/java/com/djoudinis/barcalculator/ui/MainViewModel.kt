@@ -15,13 +15,13 @@ class MainViewModel : ViewModel() {
     val billItems = mutableStateListOf<BillItem>()
     val bacDrinks = mutableStateListOf<BacDrink>()
     
-    // Bar Management
-    var currentBarName by mutableStateOf("Meine Bar")
-    
     // Configurable Settings
     var standardCocktailPrice by mutableStateOf(5.00)
     var standardBeerPrice by mutableStateOf(2.80)
     var standardShotPrice by mutableStateOf(2.00)
+    
+    // Bar Management
+    var currentBarName by mutableStateOf("Meine Bar")
     
     // App State
     var weight by mutableStateOf(80f)
@@ -60,7 +60,7 @@ class MainViewModel : ViewModel() {
 
     val favoriteDrink: String
         get() = billItems.groupBy { it.name }
-            .maxByOrNull { it.value.size }?.key ?: "Noch kein Favorit"
+            .maxByOrNull { it.value.size }?.key ?: "N/A"
 
     val bacValue: Double
         get() {
@@ -112,7 +112,6 @@ class MainViewModel : ViewModel() {
         }
         
         val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
-        // Stamping with current bar name
         billItems.add(BillItem(name = drink.name, price = price, emoji = drink.emoji, abv = drink.abv, time = time, barName = currentBarName))
         
         if (drink.abv > 0) {
