@@ -88,7 +88,6 @@ class MainViewModel : ViewModel() {
 
     val bacValue: Double
         get() {
-            if (bacDrinks.isEmpty()) return 0.0
             val r = if (isMale) 0.68 else 0.55
             var totalAlcoholGrams = 0.0
             bacDrinks.forEach { d ->
