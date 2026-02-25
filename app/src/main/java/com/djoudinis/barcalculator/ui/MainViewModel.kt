@@ -37,6 +37,24 @@ class MainViewModel : ViewModel() {
     var lastSuggestedDrink by mutableStateOf<Drink?>(null)
     var taxiNumber by mutableStateOf("112") // Default emergency
 
+    val djoudiniWisdom: String
+        get() = when {
+            bacValue == 0.0 -> "Nüchtern? Langweilig. Schüttle das Handy für eine Idee! 💡"
+            bacValue < 0.3 -> "Der Abend ist jung. Ein Mojito würde jetzt gut passen. 🍃"
+            bacValue < 0.5 -> "Du bist in der 'Sweet Spot' Zone. Genieße es! 😊"
+            bacValue < 0.8 -> "Achtung: Die Witze werden schlechter, der Durst größer. 🍻"
+            bacValue < 1.2 -> "Zeit für ein Glas Wasser zwischen den Drinks! 💧"
+            else -> "STOPP! Handy weg, Taxi rufen, Döner kaufen. 🚕"
+        }
+
+    val partyColor: Color
+        get() = when {
+            bacValue < 0.5 -> Color(0xFFD4AF37) // Gold
+            bacValue < 1.0 -> Color(0xFF00E676) // Neon Green
+            bacValue < 1.5 -> Color(0xFFFFD600) // Amber
+            else -> Color(0xFFFF1744) // Neon Red
+        }
+
     // Calculations
     val billTotal: Double
         get() = billItems.sumOf { it.price }
