@@ -21,17 +21,10 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept Android SDK Licenses
-        run: yes | sdkmanager --licenses || true
+          cache: gradle
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.4'
 
       - name: Make gradlew executable
         run: chmod +x gradlew

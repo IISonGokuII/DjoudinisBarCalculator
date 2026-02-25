@@ -25,6 +25,7 @@ import com.djoudinis.barcalculator.data.DrinkDatabase
 import com.djoudinis.barcalculator.ui.MainViewModel
 
 class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -46,6 +47,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BarCalculatorApp() {
     val viewModel: MainViewModel = viewModel()
@@ -194,7 +196,7 @@ fun BillScreen(viewModel: MainViewModel) {
                         Icon(Icons.Default.Delete, "Remove", tint = Color.Red)
                     }
                 }
-                Divider(color = Color.DarkGray)
+                HorizontalDivider(color = Color.DarkGray)
             }
         }
         
