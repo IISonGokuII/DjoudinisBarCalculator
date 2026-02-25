@@ -28,10 +28,44 @@ class MainViewModel : ViewModel() {
     // UI State
     var isDrunkMode by mutableStateOf(false)
     var currentDrinkFilter by mutableStateOf("Alle")
+    
+    // Innovation Features State
+    var showSobrietyCheck by mutableStateOf(false)
+    var sobrietyAction by mutableStateOf<(() -> Unit)?>(null)
+    var mathProblem by mutableStateOf("")
+    var mathAnswer by mutableStateOf(0)
+    var lastSuggestedDrink by mutableStateOf<Drink?>(null)
+    var taxiNumber by mutableStateOf("112") // Default emergency
 
     // Calculations
     val billTotal: Double
         get() = billItems.sumOf { it.price }
+
+    val swayIntensity: Float
+        get() = (bacValue.toFloat() * 10f).coerceIn(0f, 15f)
+
+    fun generateMathProblem() {
+        val a = (5..15).random()
+        val b = (5..15).random()
+        mathProblem = "$a + $b = ?"
+        mathAnswer = a + b
+    }
+
+    fun checkSobrietyAndRun(action: () -> Unit) {
+        if (bacValue > 0.5) {
+            generateMathProblem()
+            sobrietyAction = action
+            showSobrietyCheck = true
+        } else {
+            action()
+        }
+    }
+
+    fun getRandomSuggestion(): Drink {
+        val suggestion = DrinkDatabase.allDrinks.random()
+        lastSuggestedDrink = suggestion
+        return suggestion
+    }
 
     val bacValue: Double
         get() {
