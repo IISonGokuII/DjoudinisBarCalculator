@@ -92,6 +92,9 @@ object DrinkDatabase {
         Drink(280, "Radler", "Bier", DEFAULT_BEER_PRICE, emptyList(), 2.5, "#fff44f", "🍋", "Bier mit Limo", type = DrinkType.BEER),
         Drink(281, "Alsterwasser", "Bier", DEFAULT_BEER_PRICE, emptyList(), 2.5, "#fff44f", "⛵", "Norddt. Radler", type = DrinkType.BEER),
         Drink(282, "Cola-Bier", "Bier", DEFAULT_BEER_PRICE, emptyList(), 2.5, "#3b1e08", "🥤", "Mix mit Cola", type = DrinkType.BEER),
+        Drink(285, "Diesel", "Bier", DEFAULT_BEER_PRICE, emptyList(), 2.5, "#3b1e08", "⛽", "Regionale Bezeichnung für Cola-Bier", type = DrinkType.BEER),
+        Drink(286, "Krefelder", "Bier", DEFAULT_BEER_PRICE, emptyList(), 2.5, "#311108", "🍺", "Altbier mit Cola Mix", type = DrinkType.BEER),
+        Drink(287, "Moorwasser", "Bier", DEFAULT_BEER_PRICE, emptyList(), 2.5, "#3b1e08", "🌾", "Cola-Bier Spezialität", type = DrinkType.BEER),
         Drink(283, "Pils Alkoholfrei", "Bier", DEFAULT_BEER_PRICE, emptyList(), 0.5, "#ffcc80", "🚫", "Voller Pilsgeschmack", type = DrinkType.BEER),
         Drink(284, "Weizen Alkoholfrei", "Bier", DEFAULT_BEER_PRICE, emptyList(), 0.5, "#ffcc80", "🌾", "Isotonischer Durstlöscher", type = DrinkType.BEER)
     )

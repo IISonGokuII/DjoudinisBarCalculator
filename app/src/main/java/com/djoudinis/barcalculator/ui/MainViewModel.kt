@@ -40,7 +40,11 @@ class MainViewModel : ViewModel() {
         get() {
             val base = DrinkDatabase.allDrinks
             return if (searchQuery.isEmpty()) base 
-            else base.filter { it.name.contains(searchQuery, ignoreCase = true) || it.category.contains(searchQuery, ignoreCase = true) }
+            else base.filter { 
+                it.name.contains(searchQuery, ignoreCase = true) || 
+                it.category.contains(searchQuery, ignoreCase = true) ||
+                it.description.contains(searchQuery, ignoreCase = true)
+            }
         }
 
     val bacValue: Double
