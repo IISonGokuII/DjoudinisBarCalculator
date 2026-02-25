@@ -15,23 +15,33 @@ class MainViewModel : ViewModel() {
     val billItems = mutableStateListOf<BillItem>()
     val bacDrinks = mutableStateListOf<BacDrink>()
     
+    // Configurable Settings
+    var standardCocktailPrice by mutableStateOf(5.00)
+    var standardBeerPrice by mutableStateOf(2.80)
+    
+    // App State
     var weight by mutableStateOf(80f)
     var hoursSinceFirstDrink by mutableStateOf(0f)
     var isMale by mutableStateOf(true)
     var isDrunkMode by mutableStateOf(false)
+    var waterCount by mutableStateOf(0)
+    var searchQuery by mutableStateOf("")
     
+    // Fun Features
+    var lastDiceRoll by mutableStateOf(1)
     var lastSuggestedDrink by mutableStateOf<Drink?>(null)
     var selectedDrinkForPrice by mutableStateOf<Drink?>(null)
-    
     var peakBac by mutableStateOf(0.0)
-    
-    // Fixed: Use standard mutableStateOf for better compatibility
-    var waterCount by mutableStateOf(0)
-    var splitPeopleCount by mutableStateOf(2)
-    var tipPercent by mutableStateOf(10)
 
     val billTotal: Double
         get() = billItems.sumOf { it.price }
+
+    val filteredDrinks: List<Drink>
+        get() {
+            val base = DrinkDatabase.allDrinks
+            return if (searchQuery.isEmpty()) base 
+            else base.filter { it.name.contains(searchQuery, ignoreCase = true) || it.category.contains(searchQuery, ignoreCase = true) }
+        }
 
     val bacValue: Double
         get() {
@@ -47,33 +57,28 @@ class MainViewModel : ViewModel() {
             return finalBac
         }
 
-    val hangoverForecast: Int
-        get() {
-            val alcFactor = (bacValue * 40).toInt()
-            val waterBonus = (waterCount * 15)
-            return (alcFactor - waterBonus).coerceIn(0, 100)
-        }
-
     val djoudiniWisdom: String
         get() = when {
-            bacValue == 0.0 -> "Nüchtern? Zeit für einen Signature-Cocktail! 💡"
-            bacValue < 0.3 -> "Der Abend beginnt perfekt. Schüttel dein Handy! 🎲"
-            bacValue < 0.5 -> "Sweet Spot erreicht. Trink jetzt ein Wasser! 💧"
-            bacValue < 0.8 -> "Achtung: Deine Witze werden schlechter. 🍻"
-            bacValue < 1.2 -> "Zeit für Djoudinis Geheimtipp: Ein großes Glas Wasser. 🌊"
-            else -> "Handy weg, Taxi rufen, ab ins Bett. 🚕"
+            bacValue == 0.0 -> "Nüchtern? Langweilig. Schüttle für einen Drink! 🎲"
+            bacValue < 0.5 -> "Alles entspannt. Ein Mojito wäre jetzt Gold wert. 🍃"
+            bacValue < 1.0 -> "Lustige Phase! Trink jetzt ein Glas Wasser. 💧"
+            else -> "Djoudini sagt: Taxi rufen, ab nach Hause! 🚕"
         }
 
     val partyColor: Color
         get() = when {
             bacValue < 0.4 -> Color(0xFFD4AF37) // Gold
             bacValue < 0.8 -> Color(0xFF00E676) // Neon Green
-            bacValue < 1.2 -> Color(0xFFFFD600) // Amber
             else -> Color(0xFFFF1744) // Neon Red
         }
 
     fun addToBill(drink: Drink, customPrice: Double? = null) {
-        val price = customPrice ?: drink.avgPrice
+        // Use custom price, else global setting, else database default
+        val price = customPrice ?: when(drink.type) {
+            DrinkType.COCKTAIL -> standardCocktailPrice
+            DrinkType.BEER -> standardBeerPrice
+        }
+        
         val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
         billItems.add(BillItem(name = drink.name, price = price, emoji = drink.emoji, abv = drink.abv, time = time))
         
@@ -83,27 +88,20 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun addWater() {
-        waterCount++
+    fun rollDice() {
+        lastDiceRoll = (1..6).random()
     }
 
-    fun removeBillItem(item: BillItem) {
-        billItems.remove(item)
-    }
-
-    fun addBacDrink(name: String, abv: Double, ml: Int) {
-        bacDrinks.add(BacDrink(name = name, abv = abv, ml = ml))
-    }
-    
-    fun getRandomSuggestion() {
-        lastSuggestedDrink = DrinkDatabase.allDrinks.random()
-    }
+    fun addWater() { waterCount++ }
+    fun removeBillItem(item: BillItem) { billItems.remove(item) }
+    fun addBacDrink(name: String, abv: Double, ml: Int) { bacDrinks.add(BacDrink(name = name, abv = abv, ml = ml)) }
+    fun getRandomSuggestion() { lastSuggestedDrink = DrinkDatabase.allDrinks.random() }
     
     fun getPriceAnalysis(drink: Drink, inputPrice: Double): String {
         val diff = ((inputPrice - drink.avgPrice) / drink.avgPrice) * 100
         return when {
-            diff <= 10 -> "✅ Top Preis!"
-            diff <= 30 -> "⚠️ Etwas teuer."
+            diff <= 10 -> "✅ Günstiger als der Schnitt!"
+            diff <= 30 -> "⚠️ Normaler Preis."
             else -> "🚨 ABZOCKE! (+${diff.toInt()}% über Schnitt)"
         }
     }

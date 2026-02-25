@@ -97,9 +97,11 @@ class MainActivity : ComponentActivity() {
                             title = { Text("Djoudinis Empfehlung 🎲", color = accentColor) },
                             text = { 
                                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                                    Text(drink.emoji, fontSize = 64.sp)
+                                    Text(drink.emoji, fontSize = 80.sp)
                                     Text(drink.name, fontWeight = FontWeight.Bold, fontSize = 24.sp)
                                     Text(drink.description, textAlign = TextAlign.Center, color = Color.Gray)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("Zutaten: ${drink.ingredients.joinToString(", ")}", fontSize = 12.sp, textAlign = TextAlign.Center)
                                 }
                             },
                             confirmButton = {
@@ -127,10 +129,10 @@ fun PriceEntryDialog(drink: Drink, viewModel: MainViewModel, onConfirm: (Double)
 
     AlertDialog(
         onDismissRequest = { viewModel.selectedDrinkForPrice = null },
-        title = { Text("${drink.emoji} Preis für ${drink.name}") },
+        title = { Text("${drink.emoji} Preis-Check") },
         text = {
             Column {
-                Text("Was kostet der Drink in dieser Bar?")
+                Text("Bar-Preis für ${drink.name}:")
                 OutlinedTextField(
                     value = priceInput,
                     onValueChange = { priceInput = it },
@@ -138,11 +140,7 @@ fun PriceEntryDialog(drink: Drink, viewModel: MainViewModel, onConfirm: (Double)
                     suffix = { Text("€") },
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
                 )
-                Text(
-                    text = analysis,
-                    color = if (analysis.contains("ABZOCKE")) Color.Red else if (analysis.contains("Top")) Color.Green else Color.Yellow,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(analysis, color = if (analysis.contains("ABZOCKE")) Color.Red else Color.Green, fontWeight = FontWeight.Bold)
             }
         },
         confirmButton = {
@@ -165,7 +163,7 @@ fun BarCalculatorApp(viewModel: MainViewModel, accentColor: Color) {
                 title = { 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("DJOUDINI'S BAR CALC", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, letterSpacing = 2.sp)
-                        Text("LUXURY EDITION v1.1", fontSize = 10.sp, color = accentColor, fontWeight = FontWeight.Bold)
+                        Text("PRO VERSION", fontSize = 10.sp, color = accentColor, fontWeight = FontWeight.Bold)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFF0A0A0F))
@@ -173,8 +171,8 @@ fun BarCalculatorApp(viewModel: MainViewModel, accentColor: Color) {
         },
         bottomBar = {
             NavigationBar(containerColor = Color(0xFF0A0A0F).copy(alpha = 0.95f)) {
-                val tabs = listOf("Home", "Rechnung", "Menü", "Pegel")
-                val icons = listOf(Icons.Default.Home, Icons.Default.Receipt, Icons.Default.LocalDrink, Icons.Default.WineBar)
+                val tabs = listOf("Home", "Rechnung", "Menü", "Pegel", "Set")
+                val icons = listOf(Icons.Default.Home, Icons.Default.Receipt, Icons.Default.LocalDrink, Icons.Default.WineBar, Icons.Default.Settings)
                 
                 tabs.forEachIndexed { index, title ->
                     NavigationBarItem(
@@ -196,6 +194,7 @@ fun BarCalculatorApp(viewModel: MainViewModel, accentColor: Color) {
                 1 -> BillScreen(viewModel, accentColor)
                 2 -> MenuScreen(viewModel, accentColor)
                 3 -> BacScreen(viewModel, accentColor)
+                4 -> SettingsScreen(viewModel, accentColor)
             }
         }
     }
@@ -205,88 +204,98 @@ fun BarCalculatorApp(viewModel: MainViewModel, accentColor: Color) {
 fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
     LazyColumn(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = accentColor.copy(alpha = 0.1f)),
-                border = androidx.compose.foundation.BorderStroke(1.dp, accentColor.copy(alpha = 0.5f))
-            ) {
+            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = accentColor.copy(alpha = 0.1f))) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text("🧠 Djoudini sagt:", color = accentColor, fontWeight = FontWeight.Bold)
-                    Text(viewModel.djoudiniWisdom, fontSize = 20.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                    Text(viewModel.djoudiniWisdom, fontSize = 18.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }
 
-        // Water Guardian Card
-        item {
-            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFF0D47A1).copy(alpha = 0.3f))) {
-                Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("💧 Wasser-Wächter", fontWeight = FontWeight.Bold, color = Color(0xFF4FC3F7))
-                        Text("${viewModel.waterCount} Gläser getrunken", fontSize = 14.sp)
-                    }
-                    Button(onClick = { viewModel.addWater() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0288D1))) {
-                        Text("+ Wasser")
-                    }
-                }
-            }
-        }
-
-        // Night Summary
+        // Night Statistics
         item {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Text("📊 Abend-Status", fontWeight = FontWeight.Bold, color = accentColor)
+                    Text("📊 Abend-Bilanz", fontWeight = FontWeight.Bold, color = accentColor)
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        SummaryItem("Ausgegeben", "%.2f€".format(viewModel.billTotal))
-                        SummaryItem("Drinks", "${viewModel.billItems.size}")
-                        SummaryItem("Peak", "%.2f‰".format(viewModel.peakBac))
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("%.2f€".format(viewModel.billTotal), fontSize = 20.sp, fontWeight = FontWeight.Black)
+                            Text("Total", fontSize = 10.sp, color = Color.Gray)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("${viewModel.billItems.size}", fontSize = 20.sp, fontWeight = FontWeight.Black)
+                            Text("Drinks", fontSize = 10.sp, color = Color.Gray)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("%.2f‰".format(viewModel.peakBac), fontSize = 20.sp, fontWeight = FontWeight.Black)
+                            Text("Peak", fontSize = 10.sp, color = Color.Gray)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("${viewModel.waterCount}", fontSize = 20.sp, fontWeight = FontWeight.Black)
+                            Text("Wasser", fontSize = 10.sp, color = Color.Gray)
+                        }
                     }
                 }
             }
         }
-        
+
+        // Quick Dice Tool
         item {
-            Button(
-                onClick = { viewModel.isDrunkMode = !viewModel.isDrunkMode },
-                modifier = Modifier.fillMaxWidth().height(if (viewModel.isDrunkMode) 80.dp else 56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = if (viewModel.isDrunkMode) Color.Red else Color(0xFF2E7D32))
-            ) {
-                Text(if (viewModel.isDrunkMode) "🍻 BETRUNKEN-MODUS" else "🍹 Normal-Modus", fontSize = if (viewModel.isDrunkMode) 22.sp else 16.sp, fontWeight = FontWeight.Black)
+            Card(modifier = Modifier.fillMaxWidth().clickable { viewModel.rollDice() }) {
+                Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("🎲", fontSize = 40.sp)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Bar-Würfel", fontWeight = FontWeight.Bold)
+                        Text("Tippe zum Würfeln", fontSize = 12.sp, color = Color.Gray)
+                    }
+                    Text("${viewModel.lastDiceRoll}", fontSize = 32.sp, fontWeight = FontWeight.Black, color = accentColor)
+                }
             }
         }
-    }
-}
 
-@Composable
-fun SummaryItem(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black)
-        Text(label, fontSize = 12.sp, color = Color.Gray)
+        item {
+            Button(
+                onClick = { viewModel.addWater() },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0288D1))
+            ) {
+                Icon(Icons.Default.WaterDrop, "Water")
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("WASSER TRACKEN (Anti-Hangover)", fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }
 
 @Composable
 fun MenuScreen(viewModel: MainViewModel, accentColor: Color) {
-    val drinks = DrinkDatabase.allDrinks
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        items(drinks) { drink ->
-            Card(
-                modifier = Modifier.fillMaxWidth().clickable { viewModel.selectedDrinkForPrice = drink },
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(50.dp).background(Color(0xFF0A0A0F), CircleShape), contentAlignment = Alignment.Center) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        OutlinedTextField(
+            value = viewModel.searchQuery,
+            onValueChange = { viewModel.searchQuery = it },
+            placeholder = { Text("Getränk suchen...") },
+            leadingIcon = { Icon(Icons.Default.Search, "Search") },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(viewModel.filteredDrinks) { drink ->
+                Card(
+                    modifier = Modifier.fillMaxWidth().clickable { viewModel.selectedDrinkForPrice = drink },
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(drink.emoji, fontSize = 28.sp)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(drink.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text("${drink.category} · ${drink.abv}% vol", fontSize = 11.sp, color = Color.Gray)
+                        }
+                        Text("%.2f€".format(drink.avgPrice), fontWeight = FontWeight.Black, color = accentColor)
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(drink.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text("${drink.abv}% vol · ${drink.category}", fontSize = 12.sp, color = Color.Gray)
-                    }
-                    Text("%.2f€".format(drink.avgPrice), fontWeight = FontWeight.Black, color = accentColor, fontSize = 18.sp)
                 }
             }
         }
@@ -296,38 +305,33 @@ fun MenuScreen(viewModel: MainViewModel, accentColor: Color) {
 @Composable
 fun BillScreen(viewModel: MainViewModel, accentColor: Color) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Rechnung & Split", fontWeight = FontWeight.Black, fontSize = 28.sp)
-        
-        // Smart Splitter
-        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A24))) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Smart Splitter 👥", fontWeight = FontWeight.Bold, color = accentColor)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Personen: ${viewModel.splitPeopleCount}", modifier = Modifier.weight(1f))
-                    IconButton(onClick = { if (viewModel.splitPeopleCount > 1) viewModel.splitPeopleCount-- }) { Icon(Icons.Default.Remove, "-") }
-                    IconButton(onClick = { viewModel.splitPeopleCount++ }) { Icon(Icons.Default.Add, "+") }
-                }
-                val perPerson = (viewModel.billTotal * (1 + viewModel.tipPercent / 100.0)) / viewModel.splitPeopleCount
-                Text("Pro Kopf (mit ${viewModel.tipPercent}% Trinkgeld):", fontSize = 12.sp, color = Color.Gray)
-                Text("%.2f €".format(perPerson), fontSize = 24.sp, fontWeight = FontWeight.Black, color = accentColor)
+        Text("Rechnung & Split", fontWeight = FontWeight.Black, fontSize = 24.sp)
+        LazyColumn(modifier = Modifier.weight(1f).padding(vertical = 16.dp)) {
+            items(viewModel.billItems) { item ->
+                ListItem(
+                    headlineContent = { Text(item.name, fontWeight = FontWeight.Bold) },
+                    supportingContent = { Text(item.time, fontSize = 11.sp) },
+                    leadingContent = { Text(item.emoji, fontSize = 24.sp) },
+                    trailingContent = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("%.2f€".format(item.price), fontWeight = FontWeight.Bold)
+                            IconButton(onClick = { viewModel.removeBillItem(item) }) {
+                                Icon(Icons.Default.Delete, "Remove", tint = Color.Red.copy(alpha = 0.4f))
+                            }
+                        }
+                    }
+                )
             }
         }
-
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(viewModel.billItems) { item ->
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(item.emoji, fontSize = 24.sp)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(item.name, fontWeight = FontWeight.Bold)
-                        Text(item.time, fontSize = 12.sp, color = Color.Gray)
-                    }
-                    Text("%.2f€".format(item.price), fontWeight = FontWeight.Bold)
-                    IconButton(onClick = { viewModel.removeBillItem(item) }) {
-                        Icon(Icons.Default.Delete, "Remove", tint = Color.Red.copy(alpha = 0.5f))
-                    }
+        Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFF252530))) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("GESAMT", fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+                    Text("%.2f€".format(viewModel.billTotal), fontWeight = FontWeight.Black, fontSize = 24.sp, color = accentColor)
                 }
-                Divider(color = Color.DarkGray.copy(alpha = 0.2f))
+                Spacer(modifier = Modifier.height(8.dp))
+                val split = viewModel.billTotal / 2
+                Text("Zu zweit: %.2f€ p.P.".format(split), fontSize = 12.sp, color = Color.Gray)
             }
         }
     }
@@ -336,42 +340,43 @@ fun BillScreen(viewModel: MainViewModel, accentColor: Color) {
 @Composable
 fun BacScreen(viewModel: MainViewModel, accentColor: Color) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Pegel & Prognose", fontWeight = FontWeight.Black, fontSize = 28.sp)
-        
-        Card(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-            colors = CardDefaults.cardColors(containerColor = if (viewModel.bacValue > 0.5) Color(0x33FF0000) else Color(0xFF1A1A24))
-        ) {
-            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("%.2f‰".format(viewModel.bacValue), fontSize = 64.sp, fontWeight = FontWeight.Black, color = if (viewModel.bacValue > 0.5) Color.Red else accentColor)
-                
-                // Hangover Forecast
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Hangover-Gefahr für morgen:", fontSize = 14.sp, color = Color.Gray)
-                LinearProgressIndicator(
-                    progress = viewModel.hangoverForecast / 100f,
-                    modifier = Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp)),
-                    color = if (viewModel.hangoverForecast > 60) Color.Red else Color.Yellow,
-                    trackColor = Color.DarkGray
-                )
-                Text("${viewModel.hangoverForecast}%", fontWeight = FontWeight.Black, fontSize = 18.sp)
+        Text("Promillerechner", fontWeight = FontWeight.Black, fontSize = 24.sp)
+        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
+            Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("%.2f‰".format(viewModel.bacValue), fontSize = 64.sp, fontWeight = FontWeight.Black, color = accentColor)
+                Text("Dein aktueller Pegel", fontSize = 12.sp, color = Color.Gray)
             }
         }
-
         Text("Körpergewicht: ${viewModel.weight.toInt()}kg")
-        Slider(value = viewModel.weight, onValueChange = { viewModel.weight = it }, valueRange = 40f..150f, colors = SliderDefaults.colors(thumbColor = accentColor, activeTrackColor = accentColor))
+        Slider(value = viewModel.weight, onValueChange = { viewModel.weight = it }, valueRange = 40f..150f)
+        Text("Zeit seit Start: ${viewModel.hoursSinceFirstDrink.toInt()}h")
+        Slider(value = viewModel.hoursSinceFirstDrink, onValueChange = { viewModel.hoursSinceFirstDrink = it }, valueRange = 0f..12f)
         
-        Text("Stunden seit erstem Drink: ${viewModel.hoursSinceFirstDrink.toInt()}h")
-        Slider(value = viewModel.hoursSinceFirstDrink, onValueChange = { viewModel.hoursSinceFirstDrink = it }, valueRange = 0f..12f, colors = SliderDefaults.colors(thumbColor = accentColor, activeTrackColor = accentColor))
+        Button(onClick = { viewModel.addBacDrink("Bier", 5.0, 500) }, modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+            Text("+ 0.5L Bier hinzufügen")
+        }
+    }
+}
+
+@Composable
+fun SettingsScreen(viewModel: MainViewModel, accentColor: Color) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("Optionen", fontWeight = FontWeight.Black, fontSize = 24.sp, modifier = Modifier.padding(bottom = 24.dp))
         
-        Button(
-            onClick = { /* Call Taxi Action */ },
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp).height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = accentColor)
-        ) {
-            Icon(Icons.Default.LocalTaxi, "Taxi", tint = Color.Black)
-            Spacer(modifier = Modifier.width(12.dp))
-            Text("TAXI RUFEN", fontWeight = FontWeight.Black, color = Color.Black)
+        Text("Standard-Preise festlegen", fontWeight = FontWeight.Bold, color = accentColor)
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Text("Cocktails: %.2f €".format(viewModel.standardCocktailPrice))
+        Slider(value = viewModel.standardCocktailPrice.toFloat(), onValueChange = { viewModel.standardCocktailPrice = it.toDouble() }, valueRange = 3f..15f)
+        
+        Text("Bier: %.2f €".format(viewModel.standardBeerPrice))
+        Slider(value = viewModel.standardBeerPrice.toFloat(), onValueChange = { viewModel.standardBeerPrice = it.toDouble() }, valueRange = 1f..8f)
+        
+        Spacer(modifier = Modifier.height(32.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Geschlecht", modifier = Modifier.weight(1f))
+            TextButton(onClick = { viewModel.isMale = true }) { Text("M", color = if(viewModel.isMale) accentColor else Color.Gray) }
+            TextButton(onClick = { viewModel.isMale = false }) { Text("W", color = if(!viewModel.isMale) accentColor else Color.Gray) }
         }
     }
 }
