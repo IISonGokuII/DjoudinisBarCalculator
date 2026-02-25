@@ -369,7 +369,7 @@ fun BillScreen(viewModel: MainViewModel, vibrator: Vibrator) {
                         Icon(Icons.Default.Delete, "Remove", tint = Color(0x99FF0000))
                     }
                 }
-                HorizontalDivider(color = Color(0xFF252530), thickness = 1.dp)
+                Divider(color = Color(0xFF252530), thickness = 1.dp)
             }
         }
         
