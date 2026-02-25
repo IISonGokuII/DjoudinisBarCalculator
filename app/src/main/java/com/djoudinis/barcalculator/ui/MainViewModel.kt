@@ -1,6 +1,9 @@
 package com.djoudinis.barcalculator.ui
 
+import android.annotation.SuppressLint
 import android.app.Application
+import android.location.Location
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -9,6 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.djoudinis.barcalculator.data.*
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -17,6 +22,8 @@ import java.util.*
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = UserDataRepository(application.applicationContext)
+    private val osmPlacesService = OsmPlacesService()
+    private val fusedLocationClient: FusedLocationProviderClient
 
     var barVisits by mutableStateOf<List<BarVisit>>(emptyList())
     val bacDrinks = mutableStateListOf<BacDrink>()
@@ -36,13 +43,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // UI State
     var lastSuggestedDrink by mutableStateOf<Drink?>(null)
     var selectedDrinkForPrice by mutableStateOf<Drink?>(null)
-    var showNearbyPlaces by mutableStateOf(false)
+    var showNearbyPlacesDialog by mutableStateOf(false)
     var nearbyPlaces by mutableStateOf<List<Pair<String, String>>>(emptyList())
 
     val currentBarVisit: BarVisit?
         get() = barVisits.lastOrNull()
 
     init {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(application.applicationContext)
         viewModelScope.launch {
             barVisits = repository.barVisitsFlow.first()
             weight = repository.weightFlow.first()
@@ -50,7 +58,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             recalculateBacDrinks()
         }
     }
-    
+
     val billTotal: Double
         get() = barVisits.sumOf { visit -> visit.billItems.sumOf { it.price } }
 
@@ -91,28 +99,53 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addToBill(drink: Drink, customPrice: Double? = null) {
         if (currentBarVisit == null) {
-             // Potentially prompt user to select a bar first
-            addOrSwitchBar("Meine Bar") // Default bar
+            addOrSwitchBar("Meine Bar") // Default bar if no bar is selected
         }
-        
+
         val price = customPrice ?: when (drink.type) {
             DrinkType.COCKTAIL -> standardCocktailPrice
             DrinkType.BEER -> standardBeerPrice
             DrinkType.SHOT -> standardShotPrice
             DrinkType.SOFTDRINK -> standardSoftdrinkPrice
         }
-        
+
         val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
         val newItem = BillItem(name = drink.name, price = price, emoji = drink.emoji, abv = drink.abv, time = time)
 
-        val newVisits = barVisits.map {
-            if (it.barName == currentBarVisit?.barName) {
-                it.copy(billItems = it.billItems.toMutableList().apply { add(newItem) })
-            } else {
-                it
+        val updatedVisits = barVisits.toMutableList()
+        val currentVisitIndex = updatedVisits.indexOfLast { it.barName == currentBarVisit?.barName }
+
+        if (currentVisitIndex != -1) {
+            val updatedBillItems = updatedVisits[currentVisitIndex].billItems.toMutableList().apply { add(newItem) }
+            updatedVisits[currentVisitIndex] = updatedVisits[currentVisitIndex].copy(billItems = updatedBillItems)
+        } else {
+            // This case should ideally not happen if currentBarVisit is handled correctly
+            Log.e("MainViewModel", "Current bar visit not found when adding to bill.")
+        }
+        updateBarVisits(updatedVisits)
+    }
+
+    @SuppressLint("MissingPermission")
+    fun fetchNearbyPlaces() {
+        viewModelScope.launch {
+            try {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                    if (location != null) {
+                        viewModelScope.launch { // Launch a new coroutine for the suspending call
+                            nearbyPlaces = osmPlacesService.findNearbyBars(location.latitude, location.longitude)
+                            showNearbyPlacesDialog = true
+                        }
+                    } else {
+                        Log.e("MainViewModel", "Last known location is null.")
+                        // Handle case where location is not available
+                    }
+                }.addOnFailureListener { e ->
+                    Log.e("MainViewModel", "Error fetching location: ${e.message}", e)
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Error in fetchNearbyPlaces: ${e.message}", e)
             }
         }
-        updateBarVisits(newVisits)
     }
 
     private fun recalculateBacDrinks() {
