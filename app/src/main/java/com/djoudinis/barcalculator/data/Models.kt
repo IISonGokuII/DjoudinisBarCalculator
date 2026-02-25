@@ -16,7 +16,7 @@ data class Drink(
 )
 
 enum class DrinkType {
-    COCKTAIL, BEER
+    COCKTAIL, BEER, SHOT
 }
 
 data class BillItem(
