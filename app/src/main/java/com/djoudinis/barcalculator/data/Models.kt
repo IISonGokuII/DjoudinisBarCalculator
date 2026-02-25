@@ -1,5 +1,7 @@
 package com.djoudinis.barcalculator.data
 
+import java.io.Serializable
+
 data class Drink(
     val id: Int,
     val name: String,
@@ -13,7 +15,7 @@ data class Drink(
     val brewery: String? = null,
     val region: String? = null,
     val type: DrinkType
-)
+) : Serializable
 
 enum class DrinkType {
     COCKTAIL, BEER, SHOT, SOFTDRINK
@@ -26,12 +28,17 @@ data class BillItem(
     val emoji: String,
     val abv: Double,
     val time: String,
-    val barName: String // New: Store where this was bought
-)
+) : Serializable
 
 data class BacDrink(
     val id: Long = System.currentTimeMillis(),
     val name: String,
     val abv: Double,
     val ml: Int
-)
+) : Serializable
+
+data class BarVisit(
+    val barName: String,
+    val billItems: MutableList<BillItem> = mutableListOf(),
+    val startTime: Long = System.currentTimeMillis()
+) : Serializable

@@ -1,99 +1,77 @@
 package com.djoudinis.barcalculator.ui
 
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.djoudinis.barcalculator.data.*
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.*
 
-class MainViewModel : ViewModel() {
-    val billItems = mutableStateListOf<BillItem>()
+class MainViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repository = UserDataRepository(application.applicationContext)
+
+    var barVisits by mutableStateOf<List<BarVisit>>(emptyList())
     val bacDrinks = mutableStateListOf<BacDrink>()
-    
+
     // Configurable Settings
-    var standardCocktailPrice by mutableStateOf(5.00)
-    var standardBeerPrice by mutableStateOf(2.80)
-    var standardShotPrice by mutableStateOf(2.00)
-    var standardSoftdrinkPrice by mutableStateOf(2.50)
-    
-    // Bar Management
-    var currentBarName by mutableStateOf("Meine Bar")
-    
+    var standardCocktailPrice by mutableStateOf(7.50)
+    var standardBeerPrice by mutableStateOf(3.50)
+    var standardShotPrice by mutableStateOf(2.50)
+    var standardSoftdrinkPrice by mutableStateOf(2.80)
+
     // App State
     var weight by mutableStateOf(80f)
     var hoursSinceFirstDrink by mutableStateOf(0f)
     var isMale by mutableStateOf(true)
-    var isDrunkMode by mutableStateOf(false)
-    var waterCount by mutableStateOf(0)
     var searchQuery by mutableStateOf("")
-    
-    // Fun Features
-    var lastDiceRoll by mutableStateOf(1)
+
+    // UI State
     var lastSuggestedDrink by mutableStateOf<Drink?>(null)
     var selectedDrinkForPrice by mutableStateOf<Drink?>(null)
-    var peakBac by mutableStateOf(0.0)
+    var showNearbyPlaces by mutableStateOf(false)
+    var nearbyPlaces by mutableStateOf<List<Pair<String, String>>>(emptyList())
+
+    val currentBarVisit: BarVisit?
+        get() = barVisits.lastOrNull()
+
+    init {
+        viewModelScope.launch {
+            barVisits = repository.barVisitsFlow.first()
+            weight = repository.weightFlow.first()
+            isMale = repository.isMaleFlow.first()
+            recalculateBacDrinks()
+        }
+    }
     
-    // Night in Numbers State
-    var startTime by mutableStateOf<String?>(null)
-    var totalAlcoholGrams by mutableStateOf(0.0)
-
     val billTotal: Double
-        get() = billItems.sumOf { it.price }
-
-    val barsVisitedCount: Int
-        get() = billItems.map { it.barName }.distinct().size
+        get() = barVisits.sumOf { visit -> visit.billItems.sumOf { it.price } }
 
     val filteredDrinks: List<Drink>
         get() {
             val base = DrinkDatabase.allDrinks
-            return if (searchQuery.isEmpty()) {
-                base
-            } else {
-                base.filter { drink ->
-                    drink.name.contains(searchQuery, ignoreCase = true) ||
-                    drink.category.contains(searchQuery, ignoreCase = true) ||
-                    drink.description.contains(searchQuery, ignoreCase = true)
-                }
+            return if (searchQuery.isEmpty()) base
+            else base.filter {
+                it.name.contains(searchQuery, ignoreCase = true) ||
+                        it.category.contains(searchQuery, ignoreCase = true) ||
+                        it.description.contains(searchQuery, ignoreCase = true)
             }
         }
-
-    val favoriteDrink: String
-        get() = billItems.groupBy { it.name }
-            .maxByOrNull { it.value.size }?.key ?: "N/A"
 
     val bacValue: Double
         get() {
             if (bacDrinks.isEmpty()) return 0.0
             val r = if (isMale) 0.68 else 0.55
-            var alcoholGrams = 0.0
-            bacDrinks.forEach { d ->
-                alcoholGrams += d.ml * (d.abv / 100.0) * 0.789
-            }
-            totalAlcoholGrams = alcoholGrams
+            val alcoholGrams = bacDrinks.sumOf { d -> d.ml * (d.abv / 100.0) * 0.789 }
             val bac = (alcoholGrams / (weight * r)) - (0.15 * hoursSinceFirstDrink)
-            val finalBac = if (bac > 0) bac else 0.0
-            if (finalBac > peakBac) peakBac = finalBac
-            return finalBac
-        }
-
-    val hangoverForecast: Int
-        get() {
-            val alcFactor = (bacValue * 45).toInt()
-            val waterBonus = (waterCount * 12)
-            return (alcFactor - waterBonus).coerceIn(0, 100)
-        }
-
-    val djoudiniWisdom: String
-        get() = when {
-            bacValue == 0.0 -> "Nüchtern? Langweilig. Schüttle für einen Drink! 💡"
-            bacValue < 0.5 -> "Alles entspannt in '${currentBarName}'. 🍃"
-            bacValue < 1.0 -> "Lustige Phase! Trink jetzt ein Glas Wasser. 💧"
-            else -> "Djoudini sagt: Taxi rufen, ab nach Hause! 🚕"
+            return if (bac > 0) bac else 0.0
         }
 
     val partyColor: Color
@@ -104,12 +82,20 @@ class MainViewModel : ViewModel() {
             else -> Color(0xFFFF1744) // Neon Red
         }
 
+    fun addOrSwitchBar(barName: String) {
+        if (currentBarVisit?.barName != barName) {
+            val newVisits = barVisits.toMutableList().apply { add(BarVisit(barName = barName)) }
+            updateBarVisits(newVisits)
+        }
+    }
+
     fun addToBill(drink: Drink, customPrice: Double? = null) {
-        if (startTime == null) {
-            startTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+        if (currentBarVisit == null) {
+             // Potentially prompt user to select a bar first
+            addOrSwitchBar("Meine Bar") // Default bar
         }
         
-        val price = customPrice ?: when(drink.type) {
+        val price = customPrice ?: when (drink.type) {
             DrinkType.COCKTAIL -> standardCocktailPrice
             DrinkType.BEER -> standardBeerPrice
             DrinkType.SHOT -> standardShotPrice
@@ -117,31 +103,50 @@ class MainViewModel : ViewModel() {
         }
         
         val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
-        billItems.add(BillItem(name = drink.name, price = price, emoji = drink.emoji, abv = drink.abv, time = time, barName = currentBarName))
-        
-        if (drink.abv > 0) {
-            val ml = when(drink.type) {
-                DrinkType.SHOT -> 40
-                DrinkType.BEER -> if (drink.name.contains("0.5")) 500 else 330
-                DrinkType.COCKTAIL -> 250
-                DrinkType.SOFTDRINK -> 300 // Default value for softdrinks, won't be used for BAC anyway
+        val newItem = BillItem(name = drink.name, price = price, emoji = drink.emoji, abv = drink.abv, time = time)
+
+        val newVisits = barVisits.map {
+            if (it.barName == currentBarVisit?.barName) {
+                it.copy(billItems = it.billItems.toMutableList().apply { add(newItem) })
+            } else {
+                it
             }
-            addBacDrink(drink.name, drink.abv, ml)
+        }
+        updateBarVisits(newVisits)
+    }
+
+    private fun recalculateBacDrinks() {
+        bacDrinks.clear()
+        barVisits.flatMap { it.billItems }.forEach { item ->
+            if (item.abv > 0) {
+                val drinkType = DrinkDatabase.allDrinks.find { it.name == item.name }?.type
+                val ml = when (drinkType) {
+                    DrinkType.SHOT -> 40
+                    DrinkType.BEER -> 330 // Simplified for now
+                    DrinkType.COCKTAIL -> 250
+                    else -> 0
+                }
+                if (ml > 0) bacDrinks.add(BacDrink(name = item.name, abv = item.abv, ml = ml))
+            }
         }
     }
 
-    fun rollDice() { lastDiceRoll = (1..6).random() }
-    fun addWater() { waterCount++ }
-    fun removeBillItem(item: BillItem) { billItems.remove(item) }
-    fun addBacDrink(name: String, abv: Double, ml: Int) { bacDrinks.add(BacDrink(name = name, abv = abv, ml = ml)) }
-    fun getRandomSuggestion() { lastSuggestedDrink = DrinkDatabase.allDrinks.random() }
-    
-    fun getPriceAnalysis(drink: Drink, inputPrice: Double): String {
-        val diff = ((inputPrice - drink.avgPrice) / drink.avgPrice) * 100
-        return when {
-            diff <= 10 -> "✅ Top Preis!"
-            diff <= 30 -> "⚠️ Normaler Preis."
-            else -> "🚨 ABZOCKE! (+${diff.toInt()}% über Schnitt)"
+    private fun updateBarVisits(newVisits: List<BarVisit>) {
+        barVisits = newVisits
+        recalculateBacDrinks()
+        viewModelScope.launch {
+            repository.saveBarVisits(barVisits)
         }
+    }
+
+    fun saveUserSettings() {
+        viewModelScope.launch {
+            repository.saveWeight(weight)
+            repository.saveIsMale(isMale)
+        }
+    }
+
+    fun getRandomSuggestion() {
+        lastSuggestedDrink = DrinkDatabase.allDrinks.random()
     }
 }
