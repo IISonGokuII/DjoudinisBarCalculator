@@ -25,7 +25,8 @@ data class BillItem(
     val price: Double,
     val emoji: String,
     val abv: Double,
-    val time: String
+    val time: String,
+    val barName: String // New: Store where this was bought
 )
 
 data class BacDrink(

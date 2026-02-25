@@ -15,6 +15,9 @@ class MainViewModel : ViewModel() {
     val billItems = mutableStateListOf<BillItem>()
     val bacDrinks = mutableStateListOf<BacDrink>()
     
+    // Bar Management
+    var currentBarName by mutableStateOf("Meine Bar")
+    
     // Configurable Settings
     var standardCocktailPrice by mutableStateOf(5.00)
     var standardBeerPrice by mutableStateOf(2.80)
@@ -40,6 +43,9 @@ class MainViewModel : ViewModel() {
 
     val billTotal: Double
         get() = billItems.sumOf { it.price }
+
+    val barsVisitedCount: Int
+        get() = billItems.map { it.barName }.distinct().size
 
     val filteredDrinks: List<Drink>
         get() {
@@ -81,10 +87,9 @@ class MainViewModel : ViewModel() {
     val djoudiniWisdom: String
         get() = when {
             bacValue == 0.0 -> "Nüchtern? Langweilig. Schüttle für einen Drink! 💡"
-            bacValue < 0.5 -> "Alles entspannt. Ein Mojito wäre jetzt Gold wert. 🍃"
+            bacValue < 0.5 -> "Alles entspannt in '${currentBarName}'. 🍃"
             bacValue < 1.0 -> "Lustige Phase! Trink jetzt ein Glas Wasser. 💧"
-            bacValue < 1.5 -> "Djoudini sagt: Taxi rufen, ab nach Hause! 🚕"
-            else -> "Lass das Handy liegen. Jemand soll dich heimfahren. 🛌"
+            else -> "Djoudini sagt: Taxi rufen, ab nach Hause! 🚕"
         }
 
     val partyColor: Color
@@ -107,7 +112,8 @@ class MainViewModel : ViewModel() {
         }
         
         val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
-        billItems.add(BillItem(name = drink.name, price = price, emoji = drink.emoji, abv = drink.abv, time = time))
+        // Stamping with current bar name
+        billItems.add(BillItem(name = drink.name, price = price, emoji = drink.emoji, abv = drink.abv, time = time, barName = currentBarName))
         
         if (drink.abv > 0) {
             val ml = when(drink.type) {

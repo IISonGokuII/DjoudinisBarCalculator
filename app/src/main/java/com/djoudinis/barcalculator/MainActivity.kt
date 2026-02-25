@@ -136,7 +136,7 @@ fun PriceEntryDialog(drink: Drink, viewModel: MainViewModel, onConfirm: (Double)
         title = { Text("${drink.emoji} Preis-Check") },
         text = {
             Column {
-                Text("Bar-Preis für ${drink.name}:")
+                Text("Bar-Preis in '${viewModel.currentBarName}':")
                 OutlinedTextField(
                     value = priceInput,
                     onValueChange = { priceInput = it },
@@ -167,7 +167,7 @@ fun BarCalculatorApp(viewModel: MainViewModel, accentColor: Color) {
                 title = { 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("DJOUDINI'S BAR CALC", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, letterSpacing = 2.sp)
-                        Text("THE NIGHT IN NUMBERS", fontSize = 10.sp, color = accentColor, fontWeight = FontWeight.Bold)
+                        Text("PRO EDITION", fontSize = 10.sp, color = accentColor, fontWeight = FontWeight.Bold)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFF0A0A0F))
@@ -207,6 +207,26 @@ fun BarCalculatorApp(viewModel: MainViewModel, accentColor: Color) {
 @Composable
 fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
     LazyColumn(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Location Management
+        item {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("📍 Aktuelle Location", color = accentColor, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = viewModel.currentBarName,
+                        onValueChange = { viewModel.currentBarName = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = { Icon(Icons.Default.Place, "Location", tint = accentColor) },
+                        trailingIcon = { if(viewModel.currentBarName.isNotEmpty()) IconButton(onClick = { viewModel.currentBarName = "" }) { Icon(Icons.Default.Clear, "Clear") } },
+                        singleLine = true,
+                        placeholder = { Text("Bar Name eingeben...") }
+                    )
+                    Text("Drinks werden automatisch dieser Bar zugeordnet.", fontSize = 10.sp, color = Color.Gray, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
+        }
+
         item {
             Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = accentColor.copy(alpha = 0.1f))) {
                 Column(modifier = Modifier.padding(20.dp)) {
@@ -226,10 +246,10 @@ fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column {
                             NightStatLabel("Start", viewModel.startTime ?: "--:--")
-                            NightStatLabel("Favorit", viewModel.favoriteDrink)
+                            NightStatLabel("Bars", "${viewModel.barsVisitedCount}")
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            NightStatLabel("Ausgegeben", "%.2f€".format(viewModel.billTotal))
+                            NightStatLabel("Favorit", viewModel.favoriteDrink)
                             NightStatLabel("Alkohol", "%.1fg".format(viewModel.totalAlcoholGrams))
                         }
                     }
@@ -238,8 +258,8 @@ fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
                     
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                         SummaryItem("Drinks", "${viewModel.billItems.size}")
+                        SummaryItem("Euro", "%.2f€".format(viewModel.billTotal))
                         SummaryItem("Peak", "%.2f‰".format(viewModel.peakBac))
-                        SummaryItem("Wasser", "${viewModel.waterCount}")
                     }
                 }
             }
@@ -252,7 +272,7 @@ fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Bar-Würfel", fontWeight = FontWeight.Bold)
-                        Text("Tippe zum Würfeln", fontSize = 12.sp, color = Color.Gray)
+                        Text("Handy schütteln oder tippen", fontSize = 12.sp, color = Color.Gray)
                     }
                     Text("${viewModel.lastDiceRoll}", fontSize = 32.sp, fontWeight = FontWeight.Black, color = accentColor)
                 }
@@ -267,7 +287,7 @@ fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
             ) {
                 Icon(Icons.Default.WaterDrop, "Water")
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("WASSER TRACKEN (Anti-Hangover)", fontWeight = FontWeight.Bold)
+                Text("WASSER LOGGEN", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -325,22 +345,26 @@ fun MenuScreen(viewModel: MainViewModel, accentColor: Color) {
 @Composable
 fun BillScreen(viewModel: MainViewModel, accentColor: Color) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Rechnung & Split", fontWeight = FontWeight.Black, fontSize = 24.sp)
+        Text("Meine Rechnung", fontWeight = FontWeight.Black, fontSize = 24.sp)
         LazyColumn(modifier = Modifier.weight(1f).padding(vertical = 16.dp)) {
             items(viewModel.billItems) { item ->
-                ListItem(
-                    headlineContent = { Text(item.name, fontWeight = FontWeight.Bold) },
-                    supportingContent = { Text(item.time, fontSize = 11.sp) },
-                    leadingContent = { Text(item.emoji, fontSize = 24.sp) },
-                    trailingContent = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("%.2f€".format(item.price), fontWeight = FontWeight.Bold)
-                            IconButton(onClick = { viewModel.removeBillItem(item) }) {
-                                Icon(Icons.Default.Delete, "Remove", tint = Color.Red.copy(alpha = 0.4f))
-                            }
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(item.emoji, fontSize = 24.sp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(item.name, fontWeight = FontWeight.Bold)
+                        Row {
+                            Text(item.time, fontSize = 10.sp, color = Color.Gray)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("📍 ${item.barName}", fontSize = 10.sp, color = accentColor, fontWeight = FontWeight.Bold)
                         }
                     }
-                )
+                    Text("%.2f€".format(item.price), fontWeight = FontWeight.Bold)
+                    IconButton(onClick = { viewModel.removeBillItem(item) }) {
+                        Icon(Icons.Default.Delete, "Remove", tint = Color.Red.copy(alpha = 0.4f))
+                    }
+                }
+                Divider(color = Color.DarkGray.copy(alpha = 0.2f))
             }
         }
         Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFF252530))) {
@@ -349,9 +373,6 @@ fun BillScreen(viewModel: MainViewModel, accentColor: Color) {
                     Text("GESAMT", fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
                     Text("%.2f€".format(viewModel.billTotal), fontWeight = FontWeight.Black, fontSize = 24.sp, color = accentColor)
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                val split = viewModel.billTotal / 2
-                Text("Zu zweit: %.2f€ p.P.".format(split), fontSize = 12.sp, color = Color.Gray)
             }
         }
     }
@@ -360,7 +381,7 @@ fun BillScreen(viewModel: MainViewModel, accentColor: Color) {
 @Composable
 fun BacScreen(viewModel: MainViewModel, accentColor: Color) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Promillerechner", fontWeight = FontWeight.Black, fontSize = 24.sp)
+        Text("Pegel & Prognose", fontWeight = FontWeight.Black, fontSize = 24.sp)
         Card(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
             Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("%.2f‰".format(viewModel.bacValue), fontSize = 64.sp, fontWeight = FontWeight.Black, color = if (viewModel.bacValue > 0.5) Color.Red else accentColor)
