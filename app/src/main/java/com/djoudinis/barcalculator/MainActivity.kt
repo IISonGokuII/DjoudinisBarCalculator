@@ -248,7 +248,6 @@ fun BarCalculatorApp(viewModel: MainViewModel, vibrator: Vibrator) {
 fun HomeScreen(viewModel: MainViewModel, vibrator: Vibrator) {
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         item {
-            // Djoudini's Wisdom Card
             Card(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 colors = CardDefaults.cardColors(containerColor = viewModel.partyColor.copy(alpha = 0.1f)),
