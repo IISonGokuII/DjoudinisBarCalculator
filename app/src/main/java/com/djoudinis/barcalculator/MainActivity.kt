@@ -157,7 +157,7 @@ fun PriceEntryDialog(drink: Drink, viewModel: MainViewModel, onConfirm: (Double)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BarCalculatorApp(viewModel: MainViewModel, accentColor: Color) {
-    var currentTab by remember { mutableIntStateOf(0) }
+    var currentTab by remember { mutableStateOf(0) }
 
     Scaffold(
         topBar = {
@@ -241,7 +241,7 @@ fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         SummaryItem("Ausgegeben", "%.2f€".format(viewModel.billTotal))
                         SummaryItem("Drinks", "${viewModel.billItems.size}")
-                        SummaryItem("Pegel", "%.2f‰".format(viewModel.bacValue))
+                        SummaryItem("Peak", "%.2f‰".format(viewModel.peakBac))
                     }
                 }
             }

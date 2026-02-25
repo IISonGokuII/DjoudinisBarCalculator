@@ -25,10 +25,10 @@ class MainViewModel : ViewModel() {
     
     var peakBac by mutableStateOf(0.0)
     
-    // Innovation: Water Guardian & Splitter
+    // Fixed: Use standard mutableStateOf for better compatibility
     var waterCount by mutableStateOf(0)
-    var splitPeopleCount by mutableIntStateOf(2)
-    var tipPercent by mutableIntStateOf(10)
+    var splitPeopleCount by mutableStateOf(2)
+    var tipPercent by mutableStateOf(10)
 
     val billTotal: Double
         get() = billItems.sumOf { it.price }
