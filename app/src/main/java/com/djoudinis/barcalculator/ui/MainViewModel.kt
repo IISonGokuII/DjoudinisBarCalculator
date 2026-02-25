@@ -24,6 +24,11 @@ class MainViewModel : ViewModel() {
     var selectedDrinkForPrice by mutableStateOf<Drink?>(null)
     
     var peakBac by mutableStateOf(0.0)
+    
+    // Innovation: Water Guardian & Splitter
+    var waterCount by mutableStateOf(0)
+    var splitPeopleCount by mutableIntStateOf(2)
+    var tipPercent by mutableIntStateOf(10)
 
     val billTotal: Double
         get() = billItems.sumOf { it.price }
@@ -42,14 +47,21 @@ class MainViewModel : ViewModel() {
             return finalBac
         }
 
+    val hangoverForecast: Int
+        get() {
+            val alcFactor = (bacValue * 40).toInt()
+            val waterBonus = (waterCount * 15)
+            return (alcFactor - waterBonus).coerceIn(0, 100)
+        }
+
     val djoudiniWisdom: String
         get() = when {
             bacValue == 0.0 -> "Nüchtern? Zeit für einen Signature-Cocktail! 💡"
             bacValue < 0.3 -> "Der Abend beginnt perfekt. Schüttel dein Handy! 🎲"
-            bacValue < 0.5 -> "Alles im grünen Bereich. Ein Wasser zwischendurch? 💧"
-            bacValue < 0.8 -> "Du wirst lustig! Aber denk an den Heimweg. 🚕"
+            bacValue < 0.5 -> "Sweet Spot erreicht. Trink jetzt ein Wasser! 💧"
+            bacValue < 0.8 -> "Achtung: Deine Witze werden schlechter. 🍻"
             bacValue < 1.2 -> "Zeit für Djoudinis Geheimtipp: Ein großes Glas Wasser. 🌊"
-            else -> "STOPP! Handy weg, Taxi rufen, ab ins Bett. 🛌"
+            else -> "Handy weg, Taxi rufen, ab ins Bett. 🚕"
         }
 
     val partyColor: Color
@@ -65,11 +77,14 @@ class MainViewModel : ViewModel() {
         val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
         billItems.add(BillItem(name = drink.name, price = price, emoji = drink.emoji, abv = drink.abv, time = time))
         
-        // Auto-add to BAC if it has alcohol
         if (drink.abv > 0) {
             val ml = if (drink.type == DrinkType.COCKTAIL) 250 else if (drink.name.contains("0.5")) 500 else 330
             addBacDrink(drink.name, drink.abv, ml)
         }
+    }
+
+    fun addWater() {
+        waterCount++
     }
 
     fun removeBillItem(item: BillItem) {
@@ -88,7 +103,7 @@ class MainViewModel : ViewModel() {
         val diff = ((inputPrice - drink.avgPrice) / drink.avgPrice) * 100
         return when {
             diff <= 10 -> "✅ Top Preis!"
-            diff <= 30 -> "⚠️ Etwas teurer als der Schnitt."
+            diff <= 30 -> "⚠️ Etwas teuer."
             else -> "🚨 ABZOCKE! (+${diff.toInt()}% über Schnitt)"
         }
     }
