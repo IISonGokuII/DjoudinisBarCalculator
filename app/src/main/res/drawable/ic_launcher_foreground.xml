@@ -4,17 +4,25 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Cocktail glass icon -->
+    
+    <!-- Stylized Modern Shaker (Gold) -->
     <path
-        android:fillColor="#D4A853"
-        android:pathData="M54,20 L38,55 L42,55 L42,72 L66,72 L66,55 L70,55 Z"/>
-    <!-- Glass base -->
+        android:fillColor="#D4AF37"
+        android:pathData="M48,25h12v4h-12z M45,30h18v6h-18z M45,38 L42,75 C42,78 45,80 48,80 h12 c3,0 6,-2 6,-5 L63,38 Z"/>
+    
+    <!-- Calculator Symbol Overlay (Inner Shaker) -->
     <path
-        android:fillColor="#D4A853"
-        android:pathData="M36,75 L72,75 L72,78 L36,78 Z"/>
-    <!-- Liquid in glass -->
+        android:fillColor="#000000"
+        android:fillAlpha="0.3"
+        android:pathData="M50,55h8v2h-8z M50,60h8v2h-8z M50,65h8v2h-8z"/>
+        
+    <!-- Shaker Reflection/Shine -->
     <path
-        android:fillColor="#FF9F43"
-        android:pathData="M46,38 L42,55 L66,55 L62,38 Z"
-        android:fillAlpha="0.6"/>
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.2"
+        android:pathData="M58,38 L56,75 h2 L60,38 Z"/>
+        
+    <!-- Floating Bubbles for Sparkle -->
+    <path android:fillColor="#D4AF37" android:pathData="M70,30 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0" />
+    <path android:fillColor="#D4AF37" android:pathData="M75,40 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0" />
 </vector>
