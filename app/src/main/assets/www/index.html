@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Djoudini's Bar Calculator</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-content">
+      <div>
+        <h1>DJOUDINI'S BAR CALC</h1>
+        <div class="header-subtitle">Nie wieder abgezogen werden</div>
+      </div>
+      <div class="header-icon">🍸</div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="main-content">
+
+    <!-- ========== HOME PAGE ========== -->
+    <section id="page-home" class="page active">
+      <div class="hero">
+        <div class="hero-emoji">🥃</div>
+        <h2>Dein Bar-Buddy</h2>
+        <p>Behalte den Überblick über deine Rechnung, prüfe Preise und bleib smart - auch nach dem 5. Cocktail.</p>
+      </div>
+
+      <div class="quick-actions">
+        <button class="action-btn featured" onclick="navigateTo('rechnung')">
+          <span class="action-icon">🧾</span>
+          <span class="action-label">Rechnung</span>
+        </button>
+        <button class="action-btn featured" onclick="navigateTo('preischeck')">
+          <span class="action-icon">🔍</span>
+          <span class="action-label">Preischeck</span>
+        </button>
+        <button class="action-btn" onclick="navigateTo('promille')">
+          <span class="action-icon">🍺</span>
+          <span class="action-label">Promille</span>
+        </button>
+        <button class="action-btn" onclick="navigateTo('trinkgeld')">
+          <span class="action-icon">💰</span>
+          <span class="action-label">Trinkgeld</span>
+        </button>
+        <button class="action-btn" onclick="navigateTo('kamera')">
+          <span class="action-icon">📸</span>
+          <span class="action-label">Foto-Scan</span>
+        </button>
+        <button class="action-btn" onclick="navigateTo('teilen')">
+          <span class="action-icon">👥</span>
+          <span class="action-label">Teilen</span>
+        </button>
+      </div>
+
+      <!-- Drunk Mode Toggle -->
+      <div class="drunk-mode-toggle" onclick="toggleDrunkMode()">
+        <div>
+          <div style="font-weight: 700; font-size: 0.95rem;">🍻 Betrunken-Modus</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Große Buttons & Numpad</div>
+        </div>
+        <div id="drunkToggle" class="toggle-switch"></div>
+      </div>
+
+      <!-- Recent activity -->
+      <div class="card" id="billSummaryHome" style="display: none;">
+        <div class="card-title"><span class="icon">🧾</span> Aktuelle Rechnung</div>
+        <div id="billSummaryContent"></div>
+      </div>
+    </section>
+
+    <!-- ========== RECHNUNG (BILL) PAGE ========== -->
+    <section id="page-rechnung" class="page">
+      <div class="card-title" style="font-size: 1.3rem; margin-bottom: 16px;">
+        <span class="icon">🧾</span> Meine Rechnung
+      </div>
+
+      <!-- Quick Add Buttons -->
+      <div class="filter-tabs" id="quickAddTabs">
+        <button class="filter-tab active" onclick="switchQuickAdd('cocktails')">Cocktails</button>
+        <button class="filter-tab" onclick="switchQuickAdd('bier')">Bier</button>
+        <button class="filter-tab" onclick="switchQuickAdd('custom')">Eigenes</button>
+      </div>
+
+      <!-- Search for adding -->
+      <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="billSearchInput" placeholder="Getränk suchen..." oninput="filterBillDrinks()">
+      </div>
+
+      <!-- Quick Add Drink List -->
+      <div id="billDrinkList" class="drink-list mb-16" style="max-height: 250px; overflow-y: auto;"></div>
+
+      <!-- Custom Price Entry -->
+      <div id="customEntry" class="card" style="display: none;">
+        <div class="calc-section">
+          <div class="calc-label">Name</div>
+          <div class="calc-input-group">
+            <input type="text" class="calc-input" id="customName" placeholder="z.B. Spezial-Cocktail">
+          </div>
+        </div>
+        <div class="calc-section">
+          <div class="calc-label">Preis</div>
+          <div class="calc-input-group">
+            <input type="number" class="calc-input" id="customPrice" placeholder="0.00" step="0.10" inputmode="decimal">
+            <span class="calc-unit">&euro;</span>
+          </div>
+        </div>
+        <button class="btn-add-bill" onclick="addCustomToBill()">
+          <span>+</span> Hinzufügen
+        </button>
+      </div>
+
+      <!-- Bill Items -->
+      <div class="card" style="margin-top: 8px;">
+        <div class="card-title"><span class="icon">📋</span> Bestellungen</div>
+        <div id="billItems">
+          <div class="bill-empty">
+            <div class="empty-icon">🍸</div>
+            <p>Noch keine Getränke hinzugefügt.<br>Wähle oben ein Getränk aus!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bill Total -->
+      <div id="billTotalSection" class="bill-total" style="display: none;">
+        <div class="bill-total-row">
+          <span class="bill-total-label">Zwischensumme</span>
+          <span class="bill-total-amount" id="billSubtotal">0,00 &euro;</span>
+        </div>
+        <div class="bill-total-row">
+          <span class="bill-total-label">Anzahl Getränke</span>
+          <span class="bill-total-amount" id="billCount">0</span>
+        </div>
+        <div class="bill-total-row grand-total">
+          <span class="bill-total-label">Gesamt</span>
+          <span class="bill-total-amount" id="billTotal">0,00 &euro;</span>
+        </div>
+      </div>
+
+      <button class="btn-add-bill" onclick="clearBill()" id="clearBillBtn" style="display: none; background: rgba(255,82,82,0.15); color: var(--red); margin-top: 12px;">
+        🗑️ Rechnung löschen
+      </button>
+    </section>
+
+    <!-- ========== GETRÄNKE (DRINKS) PAGE ========== -->
+    <section id="page-getraenke" class="page">
+      <div class="card-title" style="font-size: 1.3rem; margin-bottom: 16px;">
+        <span class="icon">🍹</span> Getränkekarte
+      </div>
+
+      <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="drinkSearchInput" placeholder="Cocktail oder Bier suchen..." oninput="filterDrinks()">
+      </div>
+
+      <div class="filter-tabs" id="drinkFilterTabs">
+        <button class="filter-tab active" data-filter="all" onclick="setDrinkFilter('all', this)">Alle</button>
+        <button class="filter-tab" data-filter="cocktails" onclick="setDrinkFilter('cocktails', this)">Cocktails</button>
+        <button class="filter-tab" data-filter="bier" onclick="setDrinkFilter('bier', this)">Bier</button>
+        <button class="filter-tab" data-filter="Klassiker" onclick="setDrinkFilter('Klassiker', this)">Klassiker</button>
+        <button class="filter-tab" data-filter="Tiki" onclick="setDrinkFilter('Tiki', this)">Tiki</button>
+        <button class="filter-tab" data-filter="Modern" onclick="setDrinkFilter('Modern', this)">Modern</button>
+        <button class="filter-tab" data-filter="Longdrink" onclick="setDrinkFilter('Longdrink', this)">Longdrinks</button>
+        <button class="filter-tab" data-filter="Sour" onclick="setDrinkFilter('Sour', this)">Sours</button>
+        <button class="filter-tab" data-filter="Shot" onclick="setDrinkFilter('Shot', this)">Shots</button>
+        <button class="filter-tab" data-filter="Weizenbier" onclick="setDrinkFilter('Weizenbier', this)">Weizen</button>
+        <button class="filter-tab" data-filter="Helles" onclick="setDrinkFilter('Helles', this)">Helles</button>
+        <button class="filter-tab" data-filter="Pilsener" onclick="setDrinkFilter('Pilsener', this)">Pils</button>
+        <button class="filter-tab" data-filter="Kölsch" onclick="setDrinkFilter('Kölsch', this)">Kölsch</button>
+        <button class="filter-tab" data-filter="Alkoholfrei" onclick="setDrinkFilter('Alkoholfrei', this)">Alkoholfrei</button>
+      </div>
+
+      <div id="drinkList" class="drink-list"></div>
+    </section>
+
+    <!-- ========== PREISCHECK PAGE ========== -->
+    <section id="page-preischeck" class="page">
+      <div class="card-title" style="font-size: 1.3rem; margin-bottom: 16px;">
+        <span class="icon">🔍</span> Preischeck
+      </div>
+
+      <div class="info-box">
+        💡 Wähle ein Getränk und gib den Preis ein, den dir die Bar berechnet. Wir sagen dir, ob du abgezogen wirst!
+      </div>
+
+      <div class="card">
+        <div class="calc-section">
+          <div class="calc-label">Getränk wählen</div>
+          <select class="calc-select" id="priceCheckDrink" onchange="updatePriceCheck()">
+            <option value="">-- Getränk auswählen --</option>
+          </select>
+        </div>
+
+        <div class="calc-section">
+          <div class="calc-label">Preis auf der Karte</div>
+          <div class="calc-input-group">
+            <input type="number" class="calc-input" id="priceCheckAmount" placeholder="0.00" step="0.50" inputmode="decimal" oninput="updatePriceCheck()">
+            <span class="calc-unit">&euro;</span>
+          </div>
+        </div>
+
+        <div id="priceCheckResult" class="price-result"></div>
+      </div>
+
+      <!-- Top Ripoff Alert -->
+      <div class="card">
+        <div class="card-title"><span class="icon">⚠️</span> Preis-Ampel</div>
+        <div id="priceTraffic">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+            <div style="width: 16px; height: 16px; border-radius: 50%; background: var(--neon-green);"></div>
+            <span style="font-size: 0.85rem;"><strong>Fair:</strong> bis +15% über Durchschnitt</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+            <div style="width: 16px; height: 16px; border-radius: 50%; background: var(--amber);"></div>
+            <span style="font-size: 0.85rem;"><strong>Teuer:</strong> +15% bis +40% über Durchschnitt</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 16px; height: 16px; border-radius: 50%; background: var(--red);"></div>
+            <span style="font-size: 0.85rem;"><strong>Abzocke:</strong> mehr als +40% über Durchschnitt</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== PROMILLE (BAC) PAGE ========== -->
+    <section id="page-promille" class="page">
+      <div class="card-title" style="font-size: 1.3rem; margin-bottom: 16px;">
+        <span class="icon">🍺</span> Promillerechner
+      </div>
+
+      <div class="warning-box">
+        ⚠️ Dies ist nur eine Schätzung! Fahre NIEMALS unter Alkoholeinfluss. Bereits geringe Mengen beeinträchtigen deine Reaktionsfähigkeit.
+      </div>
+
+      <div class="card">
+        <div class="calc-section">
+          <div class="calc-label">Geschlecht</div>
+          <div class="tip-buttons" style="grid-template-columns: 1fr 1fr;">
+            <button class="tip-btn active" id="genderM" onclick="setGender('m')">♂️ Männlich</button>
+            <button class="tip-btn" id="genderF" onclick="setGender('f')">♀️ Weiblich</button>
+          </div>
+        </div>
+
+        <div class="calc-section">
+          <div class="calc-label">Körpergewicht</div>
+          <div class="calc-input-group">
+            <input type="number" class="calc-input" id="bacWeight" placeholder="80" value="80" oninput="calculateBAC()" inputmode="numeric">
+            <span class="calc-unit">kg</span>
+          </div>
+        </div>
+
+        <div class="calc-section">
+          <div class="calc-slider-group">
+            <div class="calc-slider-header">
+              <span class="calc-label" style="margin-bottom: 0;">Stunden seit dem 1. Drink</span>
+              <span class="calc-slider-value" id="bacHoursValue">2h</span>
+            </div>
+            <input type="range" id="bacHours" min="0" max="12" step="0.5" value="2" oninput="updateBacHours(); calculateBAC()">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">🥂</span> Getrunken</div>
+        <div id="bacDrinksList"></div>
+        <button class="btn-add-bill" onclick="showBacAddDrink()" style="margin-top: 12px;">
+          + Getränk hinzufügen
+        </button>
+      </div>
+
+      <!-- BAC Result -->
+      <div id="bacResultSection" class="card" style="display: none;">
+        <div class="result-display" style="border: none; padding: 16px;">
+          <div class="result-value" id="bacValue">0,00‰</div>
+          <div class="result-label" id="bacLabel">Nüchtern</div>
+        </div>
+        <div class="bac-meter">
+          <div class="bac-bar">
+            <div class="bac-fill" id="bacFill" style="width: 0%"></div>
+          </div>
+          <div class="bac-labels">
+            <span>0,0‰</span>
+            <span>0,5‰</span>
+            <span>1,0‰</span>
+            <span>1,5‰</span>
+            <span>2,0‰+</span>
+          </div>
+        </div>
+        <div class="bac-status sober" id="bacStatus">Du bist nüchtern</div>
+        <div class="result-sublabel" id="bacSoberTime"></div>
+      </div>
+    </section>
+
+    <!-- ========== TRINKGELD (TIP) PAGE ========== -->
+    <section id="page-trinkgeld" class="page">
+      <div class="card-title" style="font-size: 1.3rem; margin-bottom: 16px;">
+        <span class="icon">💰</span> Trinkgeld-Rechner
+      </div>
+
+      <div class="card">
+        <div class="calc-section">
+          <div class="calc-label">Rechnungsbetrag</div>
+          <div class="calc-input-group">
+            <input type="number" class="calc-input" id="tipAmount" placeholder="0.00" step="0.50" inputmode="decimal" oninput="calculateTip()">
+            <span class="calc-unit">&euro;</span>
+          </div>
+        </div>
+
+        <div class="calc-section">
+          <div class="calc-label">Trinkgeld</div>
+          <div class="tip-buttons">
+            <button class="tip-btn" onclick="setTip(5)">5%</button>
+            <button class="tip-btn active" onclick="setTip(10)">10%</button>
+            <button class="tip-btn" onclick="setTip(15)">15%</button>
+            <button class="tip-btn" onclick="setTip(20)">20%</button>
+          </div>
+        </div>
+
+        <div class="calc-section">
+          <div class="calc-slider-group">
+            <div class="calc-slider-header">
+              <span class="calc-label" style="margin-bottom: 0;">Eigener Wert</span>
+              <span class="calc-slider-value" id="tipPercentValue">10%</span>
+            </div>
+            <input type="range" id="tipPercent" min="0" max="30" step="1" value="10" oninput="updateTipSlider(); calculateTip()">
+          </div>
+        </div>
+      </div>
+
+      <div id="tipResult" class="result-display" style="display: none;">
+        <div class="result-value" id="tipResultValue">0,00 &euro;</div>
+        <div class="result-label">Trinkgeld</div>
+        <div class="result-sublabel" id="tipResultTotal"></div>
+      </div>
+
+      <!-- Quick Round-Up -->
+      <div class="card" id="tipRoundUp" style="display: none; margin-top: 16px;">
+        <div class="card-title"><span class="icon">🪙</span> Aufrunden auf</div>
+        <div class="tip-buttons" id="roundUpButtons" style="grid-template-columns: repeat(3, 1fr);"></div>
+      </div>
+    </section>
+
+    <!-- ========== TEILEN (SPLIT) PAGE ========== -->
+    <section id="page-teilen" class="page">
+      <div class="card-title" style="font-size: 1.3rem; margin-bottom: 16px;">
+        <span class="icon">👥</span> Rechnung teilen
+      </div>
+
+      <div class="card">
+        <div class="calc-section">
+          <div class="calc-label">Gesamtbetrag</div>
+          <div class="calc-input-group">
+            <input type="number" class="calc-input" id="splitAmount" placeholder="0.00" step="0.50" inputmode="decimal" oninput="calculateSplit()">
+            <span class="calc-unit">&euro;</span>
+          </div>
+          <button class="btn-add-bill" onclick="useBillTotal()" style="margin-top: 8px; padding: 10px; font-size: 0.85rem;">
+            📋 Betrag von Rechnung übernehmen
+          </button>
+        </div>
+
+        <div class="calc-section">
+          <div class="calc-label">Anzahl Personen</div>
+          <div class="split-people">
+            <button class="split-btn" onclick="changeSplitCount(-1)">-</button>
+            <span class="split-count" id="splitCount">2</span>
+            <button class="split-btn" onclick="changeSplitCount(1)">+</button>
+          </div>
+        </div>
+
+        <div class="calc-section">
+          <div class="calc-label">Trinkgeld einrechnen?</div>
+          <div class="tip-buttons" style="grid-template-columns: repeat(3, 1fr);">
+            <button class="tip-btn active" id="splitTip0" onclick="setSplitTip(0)">0%</button>
+            <button class="tip-btn" id="splitTip10" onclick="setSplitTip(10)">10%</button>
+            <button class="tip-btn" id="splitTip15" onclick="setSplitTip(15)">15%</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="splitResult" class="result-display" style="display: none;">
+        <div class="result-value" id="splitResultValue">0,00 &euro;</div>
+        <div class="result-label">pro Person</div>
+        <div class="result-sublabel" id="splitResultTotal"></div>
+      </div>
+    </section>
+
+    <!-- ========== KAMERA (PHOTO) PAGE ========== -->
+    <section id="page-kamera" class="page">
+      <div class="card-title" style="font-size: 1.3rem; margin-bottom: 16px;">
+        <span class="icon">📸</span> Getränk erkennen
+      </div>
+
+      <div class="info-box">
+        📷 Mache ein Foto oder wähle eines aus deiner Galerie. Wir helfen dir, das Getränk zu identifizieren und prüfen den Preis!
+      </div>
+
+      <div class="camera-container" id="cameraContainer">
+        <video id="cameraPreview" autoplay playsinline></video>
+        <img id="capturedImage" alt="Captured">
+        <div class="camera-placeholder" id="cameraPlaceholder">
+          <div class="cam-icon">📷</div>
+          <p>Tippe unten um ein Foto zu machen<br>oder aus der Galerie zu wählen</p>
+        </div>
+      </div>
+
+      <div class="camera-buttons">
+        <button class="cam-btn primary" onclick="takePhoto()">
+          📷 Kamera
+        </button>
+        <button class="cam-btn" onclick="pickFromGallery()">
+          🖼️ Galerie
+        </button>
+      </div>
+
+      <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleFileSelect(event)">
+
+      <!-- Manual Color + Glass Selection -->
+      <div id="manualIdentify" class="card" style="margin-top: 16px;">
+        <div class="card-title"><span class="icon">🎨</span> Oder manuell identifizieren</div>
+
+        <div class="calc-label mb-8">Farbe des Getränks</div>
+        <div class="color-grid">
+          <div class="color-option" style="background: #e8e8e8;" data-color="clear" onclick="selectColor('clear', this)">Klar</div>
+          <div class="color-option" style="background: #d4a574;" data-color="amber" onclick="selectColor('amber', this)">Amber</div>
+          <div class="color-option" style="background: #cc3333;" data-color="red" onclick="selectColor('red', this)">Rot</div>
+          <div class="color-option" style="background: #ff8c00;" data-color="orange" onclick="selectColor('orange', this)">Orange</div>
+          <div class="color-option" style="background: #f0e68c;" data-color="yellow" onclick="selectColor('yellow', this)">Gelb</div>
+          <div class="color-option" style="background: #4caf50;" data-color="green" onclick="selectColor('green', this)">Grün</div>
+          <div class="color-option" style="background: #2196f3;" data-color="blue" onclick="selectColor('blue', this)">Blau</div>
+          <div class="color-option" style="background: #ff69b4;" data-color="pink" onclick="selectColor('pink', this)">Pink</div>
+          <div class="color-option" style="background: #5d4037;" data-color="brown" onclick="selectColor('brown', this)">Braun</div>
+          <div class="color-option" style="background: #fffdd0;" data-color="white" onclick="selectColor('white', this)">Weiß</div>
+          <div class="color-option" style="background: #1a1a2e;" data-color="dark" onclick="selectColor('dark', this)">Dunkel</div>
+        </div>
+
+        <div class="calc-label mb-8">Glastyp</div>
+        <div class="glass-grid">
+          <div class="glass-option" data-glass="martini" onclick="selectGlass('martini', this)">
+            <div class="glass-emoji">🍸</div>
+            <div class="glass-label">Martini</div>
+          </div>
+          <div class="glass-option" data-glass="highball" onclick="selectGlass('highball', this)">
+            <div class="glass-emoji">🥤</div>
+            <div class="glass-label">Highball</div>
+          </div>
+          <div class="glass-option" data-glass="rocks" onclick="selectGlass('rocks', this)">
+            <div class="glass-emoji">🥃</div>
+            <div class="glass-label">Tumbler</div>
+          </div>
+          <div class="glass-option" data-glass="coupe" onclick="selectGlass('coupe', this)">
+            <div class="glass-emoji">🍷</div>
+            <div class="glass-label">Coupe</div>
+          </div>
+          <div class="glass-option" data-glass="hurricane" onclick="selectGlass('hurricane', this)">
+            <div class="glass-emoji">🍹</div>
+            <div class="glass-label">Hurricane</div>
+          </div>
+          <div class="glass-option" data-glass="champagneflute" onclick="selectGlass('champagneflute', this)">
+            <div class="glass-emoji">🥂</div>
+            <div class="glass-label">Flöte</div>
+          </div>
+          <div class="glass-option" data-glass="wine" onclick="selectGlass('wine', this)">
+            <div class="glass-emoji">🍷</div>
+            <div class="glass-label">Weinglas</div>
+          </div>
+          <div class="glass-option" data-glass="shot" onclick="selectGlass('shot', this)">
+            <div class="glass-emoji">🥃</div>
+            <div class="glass-label">Shot</div>
+          </div>
+          <div class="glass-option" data-glass="copper" onclick="selectGlass('copper', this)">
+            <div class="glass-emoji">🫙</div>
+            <div class="glass-label">Kupfer</div>
+          </div>
+        </div>
+
+        <button class="btn-add-bill" onclick="identifyDrink()">🔍 Getränk identifizieren</button>
+      </div>
+
+      <!-- Recognition Results -->
+      <div class="recognition-results" id="recognitionResults">
+        <div class="card" style="margin-top: 16px;">
+          <div class="card-title"><span class="icon">✨</span> Mögliche Treffer</div>
+          <div id="matchResults"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== BOTTOM NAVIGATION ===== -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="navigateTo('home')">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" onclick="navigateTo('rechnung')">
+      <span class="nav-icon">🧾</span>
+      <span class="nav-label">Rechnung</span>
+      <span class="badge" id="billBadge" style="display: none;">0</span>
+    </button>
+    <button class="nav-item" onclick="navigateTo('getraenke')">
+      <span class="nav-icon">🍹</span>
+      <span class="nav-label">Drinks</span>
+    </button>
+    <button class="nav-item" onclick="navigateTo('kamera')">
+      <span class="nav-icon">📸</span>
+      <span class="nav-label">Scan</span>
+    </button>
+    <button class="nav-item" onclick="navigateTo('promille')">
+      <span class="nav-icon">🍺</span>
+      <span class="nav-label">Promille</span>
+    </button>
+  </nav>
+
+  <!-- ===== DRINK DETAIL MODAL ===== -->
+  <div class="modal-overlay" id="drinkModal" onclick="closeDrinkModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-body">
+        <div class="modal-drink-header">
+          <div class="modal-drink-emoji" id="modalEmoji"></div>
+          <div class="modal-drink-name" id="modalName"></div>
+          <div class="modal-drink-category" id="modalCategory"></div>
+          <div class="modal-drink-desc" id="modalDesc"></div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">Statistiken</div>
+          <div class="modal-stats">
+            <div class="modal-stat">
+              <div class="modal-stat-value" id="modalPrice"></div>
+              <div class="modal-stat-label">Ø Preis</div>
+            </div>
+            <div class="modal-stat">
+              <div class="modal-stat-value" id="modalAbv"></div>
+              <div class="modal-stat-label">Alkohol</div>
+            </div>
+            <div class="modal-stat">
+              <div class="modal-stat-value" id="modalCategory2"></div>
+              <div class="modal-stat-label">Kategorie</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-section" id="modalIngredientsSection">
+          <div class="modal-section-title">Zutaten</div>
+          <div class="ingredient-list" id="modalIngredients"></div>
+        </div>
+
+        <div class="modal-section" id="modalBrewerySection" style="display: none;">
+          <div class="modal-section-title">Brauerei & Region</div>
+          <div style="padding: 12px; background: var(--bg-input); border-radius: var(--radius-sm);">
+            <div style="font-weight: 600;" id="modalBrewery"></div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;" id="modalRegion"></div>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">Preis prüfen</div>
+          <div class="modal-price-check">
+            <div class="price-check-row">
+              <span style="color: var(--text-secondary);">Ø Durchschnitt</span>
+              <span class="price-fair" id="modalAvgPrice"></span>
+            </div>
+            <div class="price-check-row">
+              <span style="color: var(--text-secondary);">Noch fair bis</span>
+              <span class="price-warning" id="modalFairPrice"></span>
+            </div>
+            <div class="price-check-row">
+              <span style="color: var(--text-secondary);">Abzocke ab</span>
+              <span class="price-ripoff" id="modalRipoffPrice"></span>
+            </div>
+          </div>
+
+          <div class="price-input-row">
+            <input type="number" class="price-input" id="modalPriceInput" placeholder="Preis eingeben" step="0.50" inputmode="decimal" oninput="checkModalPrice()">
+            <span style="color: var(--text-muted);">&euro;</span>
+          </div>
+          <div id="modalPriceResult" class="price-result"></div>
+        </div>
+
+        <button class="btn-add-bill" id="modalAddBtn" onclick="addModalDrinkToBill()">
+          🧾 Zur Rechnung hinzufügen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BAC ADD DRINK MODAL ===== -->
+  <div class="modal-overlay" id="bacModal" onclick="closeBacModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-body">
+        <div class="card-title" style="font-size: 1.2rem; margin-bottom: 16px;">🍺 Getränk hinzufügen</div>
+
+        <div class="calc-section">
+          <div class="calc-label">Schnellauswahl</div>
+          <div class="drink-list" style="max-height: 200px; overflow-y: auto;">
+            <div class="drink-card" onclick="addBacDrink('Bier (0.5L)', 5, 500)">
+              <span class="drink-emoji">🍺</span>
+              <div class="drink-info"><div class="drink-name">Bier (0.5L)</div><div class="drink-desc">~5% Alkohol</div></div>
+            </div>
+            <div class="drink-card" onclick="addBacDrink('Bier (0.3L)', 5, 300)">
+              <span class="drink-emoji">🍺</span>
+              <div class="drink-info"><div class="drink-name">Bier (0.3L)</div><div class="drink-desc">~5% Alkohol</div></div>
+            </div>
+            <div class="drink-card" onclick="addBacDrink('Wein (0.2L)', 12, 200)">
+              <span class="drink-emoji">🍷</span>
+              <div class="drink-info"><div class="drink-name">Wein (0.2L)</div><div class="drink-desc">~12% Alkohol</div></div>
+            </div>
+            <div class="drink-card" onclick="addBacDrink('Cocktail', 15, 250)">
+              <span class="drink-emoji">🍹</span>
+              <div class="drink-info"><div class="drink-name">Cocktail</div><div class="drink-desc">~15% Alkohol, 250ml</div></div>
+            </div>
+            <div class="drink-card" onclick="addBacDrink('Shot (4cl)', 40, 40)">
+              <span class="drink-emoji">🥃</span>
+              <div class="drink-info"><div class="drink-name">Shot (4cl)</div><div class="drink-desc">~40% Alkohol</div></div>
+            </div>
+            <div class="drink-card" onclick="addBacDrink('Longdrink', 10, 300)">
+              <span class="drink-emoji">🥤</span>
+              <div class="drink-info"><div class="drink-name">Longdrink</div><div class="drink-desc">~10% Alkohol, 300ml</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="calc-section" style="margin-top: 16px;">
+          <div class="calc-label">Oder eigene Werte</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="calc-input-group">
+              <input type="number" class="calc-input" id="bacCustomAbv" placeholder="Vol%" inputmode="decimal">
+              <span class="calc-unit">%</span>
+            </div>
+            <div class="calc-input-group">
+              <input type="number" class="calc-input" id="bacCustomMl" placeholder="ml" inputmode="numeric">
+              <span class="calc-unit">ml</span>
+            </div>
+          </div>
+          <button class="btn-add-bill" onclick="addCustomBacDrink()" style="margin-top: 10px;">+ Hinzufügen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script src="js/database.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
