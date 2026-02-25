@@ -21,6 +21,9 @@ class MainViewModel : ViewModel() {
     var isDrunkMode by mutableStateOf(false)
     
     var lastSuggestedDrink by mutableStateOf<Drink?>(null)
+    var selectedDrinkForPrice by mutableStateOf<Drink?>(null)
+    
+    var peakBac by mutableStateOf(0.0)
 
     val billTotal: Double
         get() = billItems.sumOf { it.price }
@@ -34,7 +37,9 @@ class MainViewModel : ViewModel() {
                 totalAlcoholGrams += d.ml * (d.abv / 100.0) * 0.789
             }
             val bac = (totalAlcoholGrams / (weight * r)) - (0.15 * hoursSinceFirstDrink)
-            return if (bac > 0) bac else 0.0
+            val finalBac = if (bac > 0) bac else 0.0
+            if (finalBac > peakBac) peakBac = finalBac
+            return finalBac
         }
 
     val djoudiniWisdom: String
@@ -55,9 +60,16 @@ class MainViewModel : ViewModel() {
             else -> Color(0xFFFF1744) // Neon Red
         }
 
-    fun addToBill(drink: Drink) {
+    fun addToBill(drink: Drink, customPrice: Double? = null) {
+        val price = customPrice ?: drink.avgPrice
         val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
-        billItems.add(BillItem(name = drink.name, price = drink.avgPrice, emoji = drink.emoji, abv = drink.abv, time = time))
+        billItems.add(BillItem(name = drink.name, price = price, emoji = drink.emoji, abv = drink.abv, time = time))
+        
+        // Auto-add to BAC if it has alcohol
+        if (drink.abv > 0) {
+            val ml = if (drink.type == DrinkType.COCKTAIL) 250 else if (drink.name.contains("0.5")) 500 else 330
+            addBacDrink(drink.name, drink.abv, ml)
+        }
     }
 
     fun removeBillItem(item: BillItem) {
@@ -70,5 +82,14 @@ class MainViewModel : ViewModel() {
     
     fun getRandomSuggestion() {
         lastSuggestedDrink = DrinkDatabase.allDrinks.random()
+    }
+    
+    fun getPriceAnalysis(drink: Drink, inputPrice: Double): String {
+        val diff = ((inputPrice - drink.avgPrice) / drink.avgPrice) * 100
+        return when {
+            diff <= 10 -> "✅ Top Preis!"
+            diff <= 30 -> "⚠️ Etwas teurer als der Schnitt."
+            else -> "🚨 ABZOCKE! (+${diff.toInt()}% über Schnitt)"
+        }
     }
 }

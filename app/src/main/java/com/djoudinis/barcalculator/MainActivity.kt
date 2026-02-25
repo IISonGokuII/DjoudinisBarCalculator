@@ -1,6 +1,5 @@
 package com.djoudinis.barcalculator
 
-import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -17,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,12 +42,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val sensorManager = getSystemService(android.content.Context.SENSOR_SERVICE) as SensorManager
         
         setContent {
             val viewModel: MainViewModel = viewModel()
             
-            // Shake Detection Logic
+            // Shake Detection
             DisposableEffect(Unit) {
                 val listener = object : SensorEventListener {
                     private var lastShakeTime: Long = 0
@@ -81,6 +82,14 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     BarCalculatorApp(viewModel, accentColor)
                     
+                    // Price Entry Dialog
+                    viewModel.selectedDrinkForPrice?.let { drink ->
+                        PriceEntryDialog(drink, viewModel) { price ->
+                            viewModel.addToBill(drink, price)
+                            viewModel.selectedDrinkForPrice = null
+                        }
+                    }
+
                     // Suggestion Dialog
                     viewModel.lastSuggestedDrink?.let { drink ->
                         AlertDialog(
@@ -95,9 +104,9 @@ class MainActivity : ComponentActivity() {
                             },
                             confirmButton = {
                                 Button(onClick = { 
-                                    viewModel.addToBill(drink)
+                                    viewModel.selectedDrinkForPrice = drink
                                     viewModel.lastSuggestedDrink = null 
-                                }) { Text("Hinzufügen") }
+                                }) { Text("Wählen") }
                             },
                             dismissButton = {
                                 TextButton(onClick = { viewModel.lastSuggestedDrink = null }) { Text("Anderer") }
@@ -108,6 +117,42 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+@Composable
+fun PriceEntryDialog(drink: Drink, viewModel: MainViewModel, onConfirm: (Double) -> Unit) {
+    var priceInput by remember { mutableStateOf(drink.avgPrice.toString()) }
+    val price = priceInput.toDoubleOrNull() ?: 0.0
+    val analysis = viewModel.getPriceAnalysis(drink, price)
+
+    AlertDialog(
+        onDismissRequest = { viewModel.selectedDrinkForPrice = null },
+        title = { Text("${drink.emoji} Preis für ${drink.name}") },
+        text = {
+            Column {
+                Text("Was kostet der Drink in dieser Bar?")
+                OutlinedTextField(
+                    value = priceInput,
+                    onValueChange = { priceInput = it },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    suffix = { Text("€") },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                )
+                Text(
+                    text = analysis,
+                    color = if (analysis.contains("ABZOCKE")) Color.Red else if (analysis.contains("Preis")) Color.Green else Color.Yellow,
+                    fontWeight = FontWeight.Bold
+                )
+                Text("Ø Schnitt: %.2f€".format(drink.avgPrice), fontSize = 12.sp, color = Color.Gray)
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(price) }) { Text("Hinzufügen") }
+        },
+        dismissButton = {
+            TextButton(onClick = { viewModel.selectedDrinkForPrice = null }) { Text("Abbrechen") }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -172,6 +217,22 @@ fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
                 }
             }
         }
+
+        // Night Summary
+        item {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("📊 Dein Abend in Zahlen", fontWeight = FontWeight.Bold, color = accentColor)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        SummaryItem("Ausgegeben", "%.2f€".format(viewModel.billTotal))
+                        SummaryItem("Drinks", "${viewModel.billItems.size}")
+                        SummaryItem("Peak", "%.2f‰".format(viewModel.peakBac))
+                    }
+                }
+            }
+        }
+
         item {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -195,12 +256,20 @@ fun HomeScreen(viewModel: MainViewModel, accentColor: Color) {
 }
 
 @Composable
+fun SummaryItem(label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, fontSize = 22.sp, fontWeight = FontWeight.Black)
+        Text(label, fontSize = 12.sp, color = Color.Gray)
+    }
+}
+
+@Composable
 fun MenuScreen(viewModel: MainViewModel, accentColor: Color) {
     val drinks = DrinkDatabase.allDrinks
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         items(drinks) { drink ->
             Card(
-                modifier = Modifier.fillMaxWidth().clickable { viewModel.addToBill(drink) },
+                modifier = Modifier.fillMaxWidth().clickable { viewModel.selectedDrinkForPrice = drink },
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -210,7 +279,7 @@ fun MenuScreen(viewModel: MainViewModel, accentColor: Color) {
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(drink.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text(drink.description, fontSize = 12.sp, color = Color.Gray, maxLines = 1)
+                        Text("${drink.abv}% vol · ${drink.category}", fontSize = 12.sp, color = Color.Gray)
                     }
                     Text("%.2f€".format(drink.avgPrice), fontWeight = FontWeight.Black, color = accentColor, fontSize = 18.sp)
                 }
@@ -260,6 +329,7 @@ fun BacScreen(viewModel: MainViewModel, accentColor: Color) {
             Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("%.2f‰".format(viewModel.bacValue), fontSize = 72.sp, fontWeight = FontWeight.Black, color = if (viewModel.bacValue > 0.5) Color.Red else accentColor)
                 Text(if (viewModel.bacValue > 0.5) "Fahren verboten! ⛔" else "Noch fit ✅", fontWeight = FontWeight.Bold)
+                Text("Peak heute: %.2f‰".format(viewModel.peakBac), fontSize = 12.sp, color = Color.Gray)
             }
         }
         Text("Körpergewicht: ${viewModel.weight.toInt()}kg")
