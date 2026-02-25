@@ -127,6 +127,7 @@ fun PriceEntryDialog(drink: Drink, viewModel: MainViewModel, onConfirm: (Double)
             com.djoudinis.barcalculator.data.DrinkType.COCKTAIL -> viewModel.standardCocktailPrice
             com.djoudinis.barcalculator.data.DrinkType.BEER -> viewModel.standardBeerPrice
             com.djoudinis.barcalculator.data.DrinkType.SHOT -> viewModel.standardShotPrice
+            com.djoudinis.barcalculator.data.DrinkType.SOFTDRINK -> viewModel.standardSoftdrinkPrice
         }.toString()
     ) }
     val price = priceInput.toDoubleOrNull() ?: 0.0

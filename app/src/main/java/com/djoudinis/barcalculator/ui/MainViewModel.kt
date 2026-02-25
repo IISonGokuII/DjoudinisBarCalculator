@@ -19,6 +19,7 @@ class MainViewModel : ViewModel() {
     var standardCocktailPrice by mutableStateOf(5.00)
     var standardBeerPrice by mutableStateOf(2.80)
     var standardShotPrice by mutableStateOf(2.00)
+    var standardSoftdrinkPrice by mutableStateOf(2.50)
     
     // Bar Management
     var currentBarName by mutableStateOf("Meine Bar")
@@ -50,11 +51,14 @@ class MainViewModel : ViewModel() {
     val filteredDrinks: List<Drink>
         get() {
             val base = DrinkDatabase.allDrinks
-            return if (searchQuery.isEmpty()) base 
-            else base.filter { 
-                it.name.contains(searchQuery, ignoreCase = true) || 
-                it.category.contains(searchQuery, ignoreCase = true) ||
-                it.description.contains(searchQuery, ignoreCase = true)
+            return if (searchQuery.isEmpty()) {
+                base
+            } else {
+                base.filter { drink ->
+                    drink.name.contains(searchQuery, ignoreCase = true) ||
+                    drink.category.contains(searchQuery, ignoreCase = true) ||
+                    drink.description.contains(searchQuery, ignoreCase = true)
+                }
             }
         }
 
@@ -109,6 +113,7 @@ class MainViewModel : ViewModel() {
             DrinkType.COCKTAIL -> standardCocktailPrice
             DrinkType.BEER -> standardBeerPrice
             DrinkType.SHOT -> standardShotPrice
+            DrinkType.SOFTDRINK -> standardSoftdrinkPrice
         }
         
         val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
@@ -119,6 +124,7 @@ class MainViewModel : ViewModel() {
                 DrinkType.SHOT -> 40
                 DrinkType.BEER -> if (drink.name.contains("0.5")) 500 else 330
                 DrinkType.COCKTAIL -> 250
+                DrinkType.SOFTDRINK -> 300 // Default value for softdrinks, won't be used for BAC anyway
             }
             addBacDrink(drink.name, drink.abv, ml)
         }
