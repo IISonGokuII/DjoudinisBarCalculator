@@ -10,17 +10,16 @@ object DrinkDatabase {
         Drink(13, "Moscow Mule", "Longdrink", 10.50, listOf("Vodka", "Ginger Beer", "Limette"), 10.0, "#f5deb3", "🫏", "Serviert im Kupferbecher", type = DrinkType.COCKTAIL),
         Drink(15, "Aperol Spritz", "Spritz", 9.50, listOf("Aperol", "Prosecco", "Sodawasser"), 8.0, "#ff6347", "🧡", "Italiens Sommer-Hit", type = DrinkType.COCKTAIL),
         Drink(41, "Espresso Martini", "Modern", 12.50, listOf("Vodka", "Kaffeelikör", "Espresso", "Zuckersirup"), 18.0, "#2f1b14", "☕", "Koffein trifft Alkohol", type = DrinkType.COCKTAIL),
-        Drink(81, "Long Island Iced Tea", "Longdrink", 12.00, listOf("Vodka", "Gin", "Rum", "Tequila", "Triple Sec", "Zitrone", "Cola"), 22.0, "#d2691e", "🏝️", "5 Spirituosen in einem Glas", type = DrinkType.COCKTAIL),
-        Drink(100, "Gin Basil Smash", "Modern", 11.50, listOf("Gin", "Basilikum", "Zitronensaft", "Zucker"), 16.0, "#3cb371", "🌿", "Hamburger Gin-Revolution", type = DrinkType.COCKTAIL)
+        Drink(46, "Pornstar Martini", "Modern", 13.00, listOf("Vanilla Vodka", "Passoa", "Passionsfrucht", "Prosecco"), 14.0, "#ffb347", "⭐", "Die fruchtige moderne Sensation", type = DrinkType.COCKTAIL),
+        Drink(81, "Long Island Iced Tea", "Longdrink", 12.00, listOf("Vodka", "Gin", "Rum", "Tequila", "Triple Sec", "Cola"), 22.0, "#d2691e", "🏝️", "5 Spirituosen, ein Erlebnis", type = DrinkType.COCKTAIL),
+        Drink(100, "Gin Basil Smash", "Modern", 11.50, listOf("Gin", "Basilikum", "Zitronensaft", "Zucker"), 16.0, "#3cb371", "🌿", "Die Hamburger Gin-Revolution", type = DrinkType.COCKTAIL)
     )
 
     val beers = listOf(
-        Drink(1, "Krombacher Pils", "Pilsener", 4.20, emptyList(), 4.8, "#f4c430", "🍺", "Eine Perle der Natur", "Krombacher Brauerei", "Nordrhein-Westfalen", DrinkType.BEER),
-        Drink(2, "Bitburger Premium Pils", "Pilsener", 4.20, emptyList(), 4.8, "#f0c300", "🍺", "Bitte ein Bit", "Bitburger Brauerei", "Rheinland-Pfalz", DrinkType.BEER),
-        Drink(13, "Erdinger Weißbier", "Weizenbier", 4.50, emptyList(), 5.3, "#ffb347", "🌾", "Bayerns Weißbier Nr. 1", "Erdinger Weißbräu", "Bayern", DrinkType.BEER),
-        Drink(19, "Augustiner Helles", "Helles", 4.50, emptyList(), 5.2, "#f5d442", "☀️", "Münchens Liebling", "Augustiner Bräu", "Bayern", DrinkType.BEER),
-        Drink(20, "Tegernseer Hell", "Helles", 4.50, emptyList(), 4.8, "#f4c430", "☀️", "Vom Tegernsee", "Herzogl. Bayerisches Brauhaus", "Bayern", DrinkType.BEER),
-        Drink(47, "Rothaus Tannenzäpfle", "Pilsener", 4.20, emptyList(), 5.1, "#f0c300", "🌲", "Schwarzwald-Kult", "Badische Staatsbrauerei Rothaus", "Baden-Württemberg", DrinkType.BEER)
+        Drink(1, "Pilsener", "Bier", 4.20, emptyList(), 4.8, "#f4c430", "🍺", "Klassisch herb & frisch", type = DrinkType.BEER),
+        Drink(13, "Hefeweizen", "Bier", 4.50, emptyList(), 5.3, "#ffb347", "🌾", "Bayrische Weißbier-Kultur", type = DrinkType.BEER),
+        Drink(19, "Helles", "Bier", 4.50, emptyList(), 5.2, "#f5d442", "☀️", "Mild & süffig", type = DrinkType.BEER),
+        Drink(40, "Doppelbock", "Bier", 5.00, emptyList(), 7.9, "#5c3317", "💪", "Kräftig & charakterstark", type = DrinkType.BEER)
     )
 
     val allDrinks = cocktails + beers
