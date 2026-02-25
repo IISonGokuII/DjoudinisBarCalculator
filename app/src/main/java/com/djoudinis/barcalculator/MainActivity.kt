@@ -5,6 +5,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Vibrator
 import android.os.VibrationEffect
@@ -24,11 +25,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -64,9 +63,7 @@ class MainActivity : ComponentActivity() {
                             if (now - lastShakeTime > 2000) {
                                 lastShakeTime = now
                                 viewModel.getRandomSuggestion()
-                                try {
-                                    vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
-                                } catch (e: Exception) {}
+                                vibrateCompat(vibrator, 200)
                             }
                         }
                     }
@@ -152,6 +149,17 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    private fun vibrateCompat(vibrator: Vibrator, duration: Long) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(duration)
+            }
+        } catch (e: Exception) {}
+    }
 }
 
 @Composable
@@ -215,7 +223,6 @@ fun BarCalculatorApp(viewModel: MainViewModel, vibrator: Vibrator) {
                         selected = currentTab == index,
                         onClick = { 
                             currentTab = index 
-                            try { vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
                         },
                         icon = { Icon(icons[index], title) },
                         label = { Text(title) },
@@ -241,6 +248,7 @@ fun BarCalculatorApp(viewModel: MainViewModel, vibrator: Vibrator) {
 fun HomeScreen(viewModel: MainViewModel, vibrator: Vibrator) {
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         item {
+            // Djoudini's Wisdom Card
             Card(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 colors = CardDefaults.cardColors(containerColor = viewModel.partyColor.copy(alpha = 0.1f)),
@@ -282,7 +290,6 @@ fun HomeScreen(viewModel: MainViewModel, vibrator: Vibrator) {
             Button(
                 onClick = { 
                     viewModel.isDrunkMode = !viewModel.isDrunkMode 
-                    try { vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
                 },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp).height(if (viewModel.isDrunkMode) 80.dp else 56.dp),
                 shape = RoundedCornerShape(16.dp),
@@ -320,7 +327,6 @@ fun DrinkListScreen(viewModel: MainViewModel, vibrator: Vibrator) {
         items(drinks) { drink ->
             DrinkItem(drink, viewModel.partyColor) { 
                 viewModel.addToBill(drink)
-                try { vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
             }
         }
     }
@@ -363,13 +369,13 @@ fun BillScreen(viewModel: MainViewModel, vibrator: Vibrator) {
                     }
                     Text("%.2f€".format(item.price), fontWeight = FontWeight.Bold, fontSize = 20.sp)
                     IconButton(onClick = { 
-                        try { vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
                         viewModel.checkSobrietyAndRun { viewModel.removeBillItem(item) } 
                     }) {
                         Icon(Icons.Default.Delete, "Remove", tint = Color(0x99FF0000))
                     }
                 }
-                HorizontalDivider(color = Color(0xFF252530), thickness = 1.dp)
+                @Suppress("DEPRECATION")
+                Divider(color = Color(0xFF252530), thickness = 1.dp)
             }
         }
         
@@ -382,7 +388,6 @@ fun BillScreen(viewModel: MainViewModel, vibrator: Vibrator) {
         
         Button(
             onClick = { 
-                try { vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
                 viewModel.checkSobrietyAndRun { viewModel.clearBill() } 
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -425,18 +430,15 @@ fun BacScreen(viewModel: MainViewModel, vibrator: Vibrator) {
         Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(onClick = { 
                 viewModel.addBacDrink("Bier", 5.0, 500)
-                try { vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
             }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) { Text("+ Bier") }
             Button(onClick = { 
                 viewModel.addBacDrink("Shot", 40.0, 40)
-                try { vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
             }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) { Text("+ Shot") }
         }
         
         Button(
             onClick = { 
-                try { vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
-                /* Intent to call taxi could be here */ 
+                /* Intent to call taxi */ 
             },
             modifier = Modifier.fillMaxWidth().padding(top = 24.dp).height(64.dp),
             shape = RoundedCornerShape(16.dp),
